@@ -1,0 +1,25 @@
+const verificationService = require("../services/verification.service");
+
+const login = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const response = await verificationService.login({ username, password });
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const register = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const response = await verificationService.register({ username, password });
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+module.exports = {
+  login,
+  register,
+};
