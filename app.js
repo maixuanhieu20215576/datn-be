@@ -24,7 +24,13 @@ mongoose
   .catch((err) => {
     console.error("Lỗi kết nối MongoDB Atlas:", err);
   });
-
+  app.use(
+    cors({
+      origin: "http://localhost:3000",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
 // Start server
 const PORT = 3100;
 app.listen(PORT, () => {
