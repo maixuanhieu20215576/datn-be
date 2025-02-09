@@ -3,6 +3,7 @@ const helmet = require("helmet");
 const xss = require("xss-clean");
 const cors = require("cors");
 const app = express();
+const path = require('path');
 require("dotenv").config();
 const mongoose = require("mongoose");
 
@@ -14,7 +15,13 @@ app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 
 app.use("/verify", verificationRoute);
+// Set up a static file server for React build
+app.use(express.static(path.join(__dirname, "build")));
 
+// For any other route, serve the index.html to let React Router handle it
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 const uri = process.env.MONGO_URI;
 mongoose
   .connect(uri)
@@ -24,13 +31,13 @@ mongoose
   .catch((err) => {
     console.error("Lỗi kết nối MongoDB Atlas:", err);
   });
-  app.use(
-    cors({
-      origin: "http://localhost:3000",
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    })
-  );
+app.use(
+  cors({
+    origin: "https://datn-fe-l5pt.onrender.com" || "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 // Start server
 const PORT = 3100;
 app.listen(PORT, () => {
