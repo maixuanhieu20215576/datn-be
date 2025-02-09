@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-import { constants } from './constants'; // Import constants
+import { constants } from '../constant'; // Import constants
 
 const UserSchema = mongoose.Schema(
   {
