@@ -1,8 +1,8 @@
 const constants = {
-    userRole: {
-        admin: "admin",
-        student: "student",
-        teacher: "teacher"
-    }
+  userRole: {
+    admin: "admin",
+    student: "student",
+    teacher: "teacher",
+  },
 };
-export default constants;
+module.exports = { constants };
