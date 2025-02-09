@@ -33,7 +33,7 @@ const register = async ({ username, password }) => {
 
     await newUser.save();
 
-    return { user: newUser, token };
+    return { user: newUser };
   } catch (error) {
     throw new Error(error.message);
   }
