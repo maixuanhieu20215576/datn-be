@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+import { constants } from './constants'; // Import constants
 
 const UserSchema = mongoose.Schema(
   {
@@ -10,6 +11,17 @@ const UserSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+      required: true,
+      enum: [
+        constants.userRole.admin,
+        constants.userRole.student,
+        constants.userRole.teacher,
+      ],
+      default: constants.userRole.student,
+    },
+    
   },
   {
     timestamps: true,
