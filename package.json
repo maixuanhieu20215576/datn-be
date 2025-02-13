@@ -19,6 +19,7 @@
     "helmet": "^8.0.0",
     "i18next": "^23.0.0",
     "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
     "mongoose": "^8.10.0",
     "nodemon": "^3.1.9",
     "xss-clean": "^0.1.4"

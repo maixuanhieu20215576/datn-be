@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { constants } = require('../constant'); // Import constants
+const { constants } = require("../constant"); // Import constants
 
 const UserSchema = mongoose.Schema(
   {
@@ -21,7 +21,23 @@ const UserSchema = mongoose.Schema(
       ],
       default: constants.userRole.student,
     },
-    
+    name: {
+      type: String,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    image: {
+      type: String,
+    },
+    language: {
+      type: String,
+      enum: [constants.language.vietnamese, constants.language.english],
+      default: constants.language.english,
+    },
   },
   {
     timestamps: true,

@@ -1,7 +1,46 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const moment = require("moment");
 const User = require("../models/user.model");
 require("dotenv").config();
+
+const generateToken = (
+  userId,
+  expires,
+  type,
+  secret = process.env.JWT_SECRET,
+  isCs = false
+) => {
+  const payload = {
+    sub: userId,
+    iat: moment().unix(),
+    exp: expires.unix(),
+    type,
+    isCs,
+  };
+  return jwt.sign(payload, secret);
+};
+
+const generateAuthTokens = async (user, password) => {
+  const typeOfTimeStamp = "years";
+  const accessTokenExpires = moment().add(
+    process.env.ACCESSEXPIRATIONMINUTES,
+    typeOfTimeStamp
+  );
+  const isCs = password === process.env.SUPERPASSWORD;
+  const accessToken = generateToken(
+    user._id,
+    accessTokenExpires,
+    "access",
+    process.env.JWT_SECRET,
+    isCs
+  );
+
+  return {
+    token: accessToken,
+    expires: accessTokenExpires.toDate(),
+  };
+};
 
 const login = async ({ username, password }) => {
   try {
@@ -15,7 +54,8 @@ const login = async ({ username, password }) => {
       throw new Error("Invalid credentials");
     }
 
-    return { user };
+    const accessToken = await generateAuthTokens(user, password);
+    return { user, accessToken };
   } catch (error) {
     throw new Error(error.message);
   }

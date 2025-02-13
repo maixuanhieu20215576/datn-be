@@ -8,6 +8,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 const verificationRoute = require("./src/routes/verification.route");
+const userRoute = require("./src/routes/user.route")
 
 app.use(helmet()); // Set security HTTP headers
 app.use(xss()); // Sanitize request data
@@ -15,6 +16,7 @@ app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 
 app.use("/verify", verificationRoute);
+app.use("/user", userRoute);
 // Set up a static file server for React build
 app.use(express.static(path.join(__dirname, "build")));
 

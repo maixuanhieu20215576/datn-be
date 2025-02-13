@@ -3,8 +3,11 @@ const verificationService = require("../services/verification.service");
 const login = async (req, res) => {
   const { username, password } = req.body;
   try {
-    const response = await verificationService.login({ username, password });
-    res.status(200).json(response);
+    const { user, accessToken } = await verificationService.login({
+      username,
+      password,
+    });
+    res.status(200).json({ user, accessToken });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
