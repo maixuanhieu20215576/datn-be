@@ -30,7 +30,7 @@ const UserSchema = mongoose.Schema(
     email: {
       type: String,
     },
-    image: {
+    avatar: {
       type: String,
     },
     language: {

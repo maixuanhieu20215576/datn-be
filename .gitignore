@@ -3,3 +3,6 @@ node_modules/
 
 # Ignore package-lock.json if you don't want it to be tracked
 package-lock.json
+
+#image file
+uploads
