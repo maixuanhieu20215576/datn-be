@@ -1,8 +1,26 @@
+/* eslint-disable no-undef */
 require("dotenv").config();
 const axios = require("axios");
 const fs = require("fs");
 const userService = require("../services/user.service");
 const FormData = require("form-data");
+
+const _getAccessToken = async () => {
+  const response = await axios.post(
+    "https://api.imgur.com/oauth2/token",
+    new URLSearchParams({
+      client_id: process.env.IMGUR_CLIENT_ID,
+      client_secret: process.env.IMGUR_CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: process.env.IMGUR_REFRESH_TOKEN,
+    }).toString(),
+    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+  );
+  
+  return response.data.access_token;
+};
 
 const getUserInfo = async (req, res) => {
   try {
@@ -16,6 +34,7 @@ const getUserInfo = async (req, res) => {
 
 const updateUserInfo = async (req, res) => {
   try {
+    const accessToken = await _getAccessToken();
     const userId = req.headers["userid"] || req.body.userId;
     if (!userId) {
       res.status(500).json({
@@ -31,11 +50,9 @@ const updateUserInfo = async (req, res) => {
 
       const form = new FormData();
       form.append("image", imageData.toString("base64"));
-
       const response = await axios.post("https://api.imgur.com/3/image", form, {
         headers: {
-          // eslint-disable-next-line no-undef
-          Authorization: `Client-ID ${process.env.IMGUR_CLIENT_ID}`,
+          Authorization: `Bearer ${accessToken}`,
           ...form.getHeaders(),
         },
         timeout: 10000,
@@ -55,10 +72,6 @@ const updateUserInfo = async (req, res) => {
       avatarUrl: avatar,
     });
   } catch (err) {
-    console.error(
-      "Lỗi khi cập nhật thông tin:",
-      err.response ? err.response.data : err.message
-    );
     res.status(500).json({
       message: "Lỗi khi cập nhật thông tin người dùng",
       error: err.response ? err.response.data : err.message,
