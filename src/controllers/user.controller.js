@@ -46,10 +46,8 @@ const updateUserInfo = async (req, res) => {
     if (req.file) {
       const imageFilePath = req.file.path;
 
-      const imageData = fs.readFileSync(imageFilePath);
-
       const form = new FormData();
-      form.append("image", imageData.toString("base64"));
+      form.append("image", fs.createReadStream(imageFilePath));
       const response = await axios.post("https://api.imgur.com/3/image", form, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
