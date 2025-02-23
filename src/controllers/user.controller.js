@@ -11,14 +11,14 @@ const _getAccessToken = async () => {
     new URLSearchParams({
       client_id: process.env.IMGUR_CLIENT_ID,
       client_secret: process.env.IMGUR_CLIENT_SECRET,
-      grant_type: 'refresh_token',
+      grant_type: "refresh_token",
       refresh_token: process.env.IMGUR_REFRESH_TOKEN,
     }).toString(),
     {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
     }
   );
-  
+
   return response.data.access_token;
 };
 
@@ -63,11 +63,15 @@ const updateUserInfo = async (req, res) => {
       avatar = req.body.avatar;
     }
 
-    await userService.updateUserInfo(userId, req.body, avatar);
+    const updatedUser = await userService.updateUserInfo(
+      userId,
+      req.body,
+      avatar
+    );
 
     res.status(200).json({
       message: "Cập nhật thông tin người dùng thành công",
-      avatarUrl: avatar,
+      updatedUser,
     });
   } catch (err) {
     res.status(500).json({
