@@ -24,7 +24,7 @@ const _getAccessToken = async () => {
 
 const getUserInfo = async (req, res) => {
   try {
-    const userId = req.userId;
+    const { userId } = req.params;
     const userInfomation = await userService.getUserInfo(userId);
     res.status(200).json(userInfomation);
   } catch (err) {
