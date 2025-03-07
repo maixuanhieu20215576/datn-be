@@ -13,6 +13,7 @@ const constants = {
     parttime: "Part-time",
   },
   applicationStatus: {
+    all: "All",
     pending: "Pending",
     approved: "Approved",
     rejected: "Rejected",

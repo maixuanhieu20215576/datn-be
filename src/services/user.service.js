@@ -1,6 +1,7 @@
 const _ = require("lodash");
 const User = require("../models/user.model");
-const { constants } = require("../constant"); // Import constants
+const ApplicationForm = require("../models/applicationForm.model");
+const { constants } = require("../constant");
 
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
@@ -30,7 +31,7 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
     .split(",")
     .map((lang) => lang.trim())
     .filter((lang) => lang.length > 0);
-  const updatedUser = await User.findByIdAndUpdate(
+  /* const updatedUser = await User.findByIdAndUpdate(
     userId,
     {
       teachingApplication: {
@@ -42,17 +43,31 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
       },
     },
     { new: true }
-  );
+  ); */
+  const user = await User.findById(userId);
+  const fullName = _.get(user, "fullName", "");
+  const teachingApplication = await ApplicationForm.create({
+    userId,
+    languageSkills,
+    teachingLanguage: teachingLanguageArray,
+    teachingCommitment,
+    CV: fileUrl,
+    status: constants.applicationStatus.pending,
+    fullName,
+  });
 
-  const teachingApplication = _.get(updatedUser, "teachingApplication");
+  // const teachingApplication = _.get(updatedUser, "teachingApplication");
   return teachingApplication;
 };
 
 const getTeachingApplication = async (userId) => {
-  const user = await User.findById(userId);
-  const teachingApplication = _.get(user, "teachingApplication");
-  return teachingApplication;
+  //const user = await User.findById(userId);
+  const applicationForm = await ApplicationForm.findOne({
+    userId,
+  });
+  return applicationForm;
 };
+
 module.exports = {
   getUserInfo,
   updateUserInfo,
