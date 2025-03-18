@@ -33,6 +33,6 @@ const ApplicationFormSchema = mongoose.Schema(
   }
 );
 
-const User = mongoose.model("ApplicationForm", ApplicationFormSchema);
+const ApplicationForm = mongoose.model("ApplicationForm", ApplicationFormSchema);
 
-module.exports = User;
+module.exports = ApplicationForm;

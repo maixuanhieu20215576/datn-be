@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const verificationRoute = require("./src/routes/verification.route");
 const userRoute = require("./src/routes/user.route");
 const adminRoute = require("./src/routes/admin.route");
+const oneTimeJobRoute = require('./src/routes/oneTimeJob.route')
 
 app.use(helmet()); // Set security HTTP headers
 app.use(xss()); // Sanitize request data
@@ -18,6 +19,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use("/verify", verificationRoute);
 app.use("/user", userRoute);
 app.use("/admin", adminRoute);
+app.use('/one-time-job', oneTimeJobRoute); 
 // Set up a static file server for React build
 
 // eslint-disable-next-line no-undef

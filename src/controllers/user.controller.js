@@ -79,6 +79,7 @@ const updateUserInfo = async (req, res) => {
         message: "Lỗi khi cập nhật thông tin người dùng",
       });
     }
+
     let avatar;
 
     if (req.file) {
@@ -87,7 +88,7 @@ const updateUserInfo = async (req, res) => {
       const form = new FormData();
       form.append("image", fileBuffer, {
         filename: req.file.originalname,
-        contentType: fileMimeType,
+        contentType: req.file.mimetype,
       });
       const response = await axios.post("https://api.imgur.com/3/image", form, {
         headers: {

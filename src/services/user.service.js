@@ -9,16 +9,18 @@ const getUserInfo = async (userId) => {
 };
 
 const updateUserInfo = async (userId, requestBody, avatar) => {
-  const { email, name, username, phoneNumber, language } = requestBody;
+  const { email, phoneNumber, language, facebook, linkedin, fullName } =
+    requestBody;
   const user = await User.findByIdAndUpdate(
     userId,
     {
       email,
-      name,
-      username,
       phoneNumber,
       avatar,
       language,
+      facebook,
+      linkedin,
+      fullName,
     },
     { new: true }
   );

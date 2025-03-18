@@ -62,15 +62,15 @@ const login = async ({ username, password }) => {
   }
 };
 
-const register = async ({ username, password }) => {
+const register = async ({ username, password, fullName, email }) => {
   try {
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      throw new Error("Username already taken");
+      throw new Error("Têm đăng nhập đã tồn tại !");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword });
+    const newUser = new User({ username, password: hashedPassword, fullName, email });
 
     await newUser.save();
 

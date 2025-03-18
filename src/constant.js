@@ -18,5 +18,18 @@ const constants = {
     approved: "Approved",
     rejected: "Rejected",
   },
+  entranceExamField: {
+    mathematics: "Mathematics",
+    experimentalSciences: "Experimental Sciences",
+    humanities: "Humanities",
+    art: "Art",
+    language: "Language",
+  },
+  questionType: {
+    unknown: "Unknown",
+    reading: "Reading",
+    grammar: "Grammar",
+    vocab: "Vocab",
+  },
 };
 module.exports = { constants };

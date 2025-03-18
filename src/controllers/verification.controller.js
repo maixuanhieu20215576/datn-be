@@ -14,9 +14,9 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password , fullName, email} = req.body;
   try {
-    const response = await verificationService.register({ username, password });
+    const response = await verificationService.register({ username, password , fullName, email});
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });

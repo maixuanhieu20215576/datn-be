@@ -1,11 +1,12 @@
 const adminService = require("../services/admin.service");
 const fetchApplicationForms = async (req, res) => {
   try {
-    const { page, itemPerPage, filterStatus } = req.body;
+    const { page, itemPerPage, filterStatus, userId } = req.body;
     const applicationForms = await adminService.fetchApplicationForms({
       page,
       itemPerPage,
       filterStatus,
+      userId,
     });
     res.status(200).json(applicationForms);
   } catch (err) {

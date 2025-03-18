@@ -38,6 +38,12 @@ const UserSchema = mongoose.Schema(
       enum: [constants.language.vietnamese, constants.language.english],
       default: constants.language.english,
     },
+    facebook: {
+      type: String,
+    },
+    linkedin: {
+      type: String,
+    },
   },
   {
     timestamps: true,
