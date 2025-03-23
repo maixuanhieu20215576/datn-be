@@ -31,5 +31,11 @@ const constants = {
     grammar: "Grammar",
     vocab: "Vocab",
   },
+  courseLevel: {
+    ALL: "All levels",
+    BEGINNER: "Beginner",
+    INTERMEDIATE: "Intermediate",
+    EXPERT: "Expert",
+  },
 };
 module.exports = { constants };

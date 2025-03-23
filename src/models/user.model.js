@@ -44,6 +44,14 @@ const UserSchema = mongoose.Schema(
     linkedin: {
       type: String,
     },
+    bankPaymentInfo: {
+      bankName: {
+        type: String,
+      },
+      bankAccountNumber: {
+        type: String,
+      },
+    }
   },
   {
     timestamps: true,

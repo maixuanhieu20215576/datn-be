@@ -9,26 +9,39 @@ const getUserInfo = async (userId) => {
 };
 
 const updateUserInfo = async (userId, requestBody, avatar) => {
-  const { email, phoneNumber, language, facebook, linkedin, fullName } =
+  const { email, phoneNumber, language, facebook, linkedin, fullName, bankAccountNumber, bankName } =
     requestBody;
-  const user = await User.findByIdAndUpdate(
-    userId,
-    {
-      email,
-      phoneNumber,
-      avatar,
-      language,
-      facebook,
-      linkedin,
-      fullName,
-    },
-    { new: true }
-  );
+  let updateUser = { avatar: avatar };
+  if (email) {
+    updateUser.email = email;
+  }
+  if (phoneNumber) {
+    updateUser.phoneNumber = phoneNumber;
+  }
+  if (language) {
+    updateUser.language = language;
+  }
+  if (facebook) {
+    updateUser.facebook = facebook;
+  }
+  if (linkedin) {
+    updateUser.linkedin = linkedin;
+  }
+  if (fullName) {
+    updateUser.fullName = fullName;
+  }
+  if (bankAccountNumber && bankName) {
+    updateUser.bankPaymentInfo = {
+      bankAccountNumber,
+      bankName
+    }
+  }
+  const user = await User.findByIdAndUpdate(userId, updateUser, { new: true });
   return user;
 };
 
 const applyTeaching = async (userId, fileUrl, requestBody) => {
-  const { languageSkills, teachingLanguage, teachingCommitment } = requestBody;
+  const { languageSkills, teachingLanguage, teachingCommitment, bankAccountNumber, bankName } = requestBody;
   const teachingLanguageArray = teachingLanguage
     .split(",")
     .map((lang) => lang.trim())
@@ -56,6 +69,10 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
     CV: fileUrl,
     status: constants.applicationStatus.pending,
     fullName,
+    bankPaymentInfo: {
+      bankName,
+      bankAccountNumber
+    }
   });
 
   // const teachingApplication = _.get(updatedUser, "teachingApplication");
