@@ -2,6 +2,9 @@ const moment = require("moment");
 const { stringify } = require("qs");
 const { createHmac } = require("crypto");
 const { Buffer } = require("buffer");
+const { createPaymentRequest } = require("../services/course.service");
+const orderSessionModel = require("../models/orderSession.model");
+const { constants } = require("../constant");
 
 require("dotenv").config();
 
@@ -14,7 +17,7 @@ const _sortObject = (obj) => {
   return sorted;
 };
 
-const paymentWithVnpay = async ({ total_amount, ipAddr }) => {
+const paymentWithVnpay = async ({ total_amount, ipAddr, newOrderId }) => {
   try {
     // eslint-disable-next-line no-undef
     const tmnCode = process.env.VNPAY_TMP_CODE;
@@ -28,7 +31,7 @@ const paymentWithVnpay = async ({ total_amount, ipAddr }) => {
     // Generate timestamps
     const date = moment().utcOffset(7);
     const createDate = date.format("YYYYMMDDHHmmss");
-    const orderId = date.format("HHmmss");
+    const orderId = newOrderId;
     const expireDate = moment().add(24, "hours").format("YYYYMMDDHHmmss");
     const amount = total_amount;
     const orderInfo = "Thanhtoanchokhachhang";
@@ -80,11 +83,14 @@ const payment = async (req, res) => {
     if (ipAddr === "::1" || ipAddr === "::1%0") {
       ipAddr = "127.0.0.1";
     }
-    const { price } = req.body;
+    const { price, userId, courseId } = req.body;
+
+    const newOrderId = await createPaymentRequest({ userId, courseId, price });
 
     const paymentUrl = await paymentWithVnpay({
       total_amount: price,
       ipAddr,
+      newOrderId,
     });
     res.status(200).json({ paymentUrl });
   } catch (error) {
@@ -106,6 +112,17 @@ const ipnVnpay = async (req, res) => {
   const hmac = createHmac("sha512", secretKey);
   const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
   if (secureHash === signed) {
+    const vnp_TransactionStatus = vnp_Params["vnp_TransactionStatus"];
+    const vnp_TxnRef = vnp_Params["vnp_TxnRef"];
+    if (vnp_TransactionStatus === "00") {
+      await orderSessionModel.findByIdAndUpdate(vnp_TxnRef, {
+        status: constants.paymentStatus.success,
+      });
+    } else {
+      await orderSessionModel.findByIdAndUpdate(vnp_TxnRef, {
+        status: constants.paymentStatus.failed,
+      });
+    }
     res.status(200).json({ RspCode: "00", Message: "success" });
   } else {
     res.status(200).json({ RspCode: "97", Message: "Fail checksum" });

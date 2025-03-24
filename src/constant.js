@@ -37,5 +37,11 @@ const constants = {
     INTERMEDIATE: "Intermediate",
     EXPERT: "Expert",
   },
+  paymentStatus: {
+    all: "All",
+    pending: "Pending",
+    success: "Success",
+    failed: "Failed",
+  },
 };
 module.exports = { constants };

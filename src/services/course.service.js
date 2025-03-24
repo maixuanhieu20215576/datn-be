@@ -1,4 +1,6 @@
+const _ = require("lodash");
 const Course = require("../models/course.model");
+const OrderSession = require("../models/orderSession.model");
 
 const getCourse = async (requestBody) => {
   const {
@@ -63,4 +65,14 @@ const getCourseById = async (courseId) => {
   return course;
 };
 
-module.exports = { getCourse, getCourseById };
+const createPaymentRequest = async ({price, userId, courseId}) => {
+  const newOrder = await OrderSession.create({
+    courseId,
+    userId,
+    price,
+  }, {
+    new: true,
+  })
+  return _.toString(newOrder._id);
+}
+module.exports = { getCourse, getCourseById, createPaymentRequest };
