@@ -26,4 +26,31 @@ const updateApplicationFormStatus = async (req, res) => {
     res.status(500).json(err);
   }
 };
-module.exports = { fetchApplicationForms, updateApplicationFormStatus };
+
+const fetchTeacherList = async (req, res) => {
+  try {
+    const { teachingLanguage } = req.body;
+    const teacherList = await adminService.fetchTeacherList({
+      teachingLanguage,
+    });
+    res.status(200).json(teacherList);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const createClass = async (req, res) => {
+  try {
+    await adminService.createClass(req.body);
+    res.status(200).json("Create class successfully!");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+module.exports = {
+  fetchApplicationForms,
+  updateApplicationFormStatus,
+  fetchTeacherList,
+  createClass,
+};

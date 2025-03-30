@@ -1,6 +1,13 @@
 const _ = require("lodash");
 const Course = require("../models/course.model");
+const Class = require("../models/class.model");
 const OrderSession = require("../models/orderSession.model");
+const { constants } = require("../constant");
+
+const _convertTimeToMilisecond = (time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return (hours * 60 + minutes) * 60 * 1000;
+};
 
 const getCourse = async (requestBody) => {
   const {
@@ -12,7 +19,19 @@ const getCourse = async (requestBody) => {
     page,
     searchText,
     sortOption,
+    userId,
   } = requestBody;
+
+  if (userId) {
+    const orderSessions = await OrderSession.find({
+      userId: userId,
+      status: constants.paymentStatus.success,
+    });
+    const courseIds = orderSessions.map((order) => order.courseId);
+    const purchasedCourses = await Course.find({ _id: { $in: courseIds } });
+    return { courses: purchasedCourses, totalCourses: purchasedCourses.length };
+  }
+
   const filter = {};
   if (language) {
     filter.language = language;
@@ -65,14 +84,44 @@ const getCourseById = async (courseId) => {
   return course;
 };
 
-const createPaymentRequest = async ({price, userId, courseId}) => {
+const createPaymentRequest = async ({ price, userId, courseId }) => {
   const newOrder = await OrderSession.create({
     courseId,
     userId,
     price,
-  }, {
-    new: true,
-  })
+  });
   return _.toString(newOrder._id);
-}
-module.exports = { getCourse, getCourseById, createPaymentRequest };
+};
+
+const checkCoursePurchased = async ({ userId, courseId }) => {
+  const order = await OrderSession.findOne({ userId, courseId });
+  return !!order;
+};
+
+const findClass = async ({ date, timeFrom, teacherName, timeTo }) => {
+  const filter = {};
+  if (date) {
+    filter.date = date;
+  }
+  if (timeFrom) {
+    const timeFromMiliseconds = _convertTimeToMilisecond(timeFrom);
+    filter.timeFrom = { $gte: timeFromMiliseconds };
+  }
+  if (timeTo) {
+    const timeToMiliseconds = _convertTimeToMilisecond(timeTo);
+    filter.timeTo = { $lte: timeToMiliseconds };
+  }
+  if (teacherName) {
+    filter.teacherName = new RegExp(teacherName, "i");
+  }
+  const classes = await Class.find(filter);
+  return classes;
+};
+
+module.exports = {
+  getCourse,
+  getCourseById,
+  createPaymentRequest,
+  checkCoursePurchased,
+  findClass,
+};

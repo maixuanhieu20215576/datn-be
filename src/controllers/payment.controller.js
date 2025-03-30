@@ -17,7 +17,7 @@ const _sortObject = (obj) => {
   return sorted;
 };
 
-const paymentWithVnpay = async ({ total_amount, ipAddr, newOrderId }) => {
+const paymentWithVnpay = async ({ total_amount, ipAddr, newOrderId, courseId }) => {
   try {
     // eslint-disable-next-line no-undef
     const tmnCode = process.env.VNPAY_TMP_CODE;
@@ -26,7 +26,7 @@ const paymentWithVnpay = async ({ total_amount, ipAddr, newOrderId }) => {
     // eslint-disable-next-line no-undef
     const vnpUrl = `${process.env.VNPAY_URL}`;
     // eslint-disable-next-line no-undef
-    const returnUrl = `${process.env.APP_BASE_ID}`;
+    const returnUrl = `${process.env.APP_BASE_ID}/course/${courseId}`;
 
     // Generate timestamps
     const date = moment().utcOffset(7);
@@ -91,6 +91,7 @@ const payment = async (req, res) => {
       total_amount: price,
       ipAddr,
       newOrderId,
+      courseId,
     });
     res.status(200).json({ paymentUrl });
   } catch (error) {

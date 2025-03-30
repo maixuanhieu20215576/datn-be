@@ -51,7 +51,15 @@ const UserSchema = mongoose.Schema(
       bankAccountNumber: {
         type: String,
       },
-    }
+    },
+    teachingInfo: {
+      teachingLanguage: {
+        type: [String],
+      },
+      startWorkAt: {
+        type: Date,
+      },
+    },
   },
   {
     timestamps: true,

@@ -23,4 +23,36 @@ const getCourseById = async (req, res) => {
     res.status(500).json("Internal Server Error");
   }
 };
-module.exports = { getCourse, getCourseById };
+
+const checkCoursePurchased = async (req, res) => {
+  try {
+    const { userId, courseId } = req.body;
+    const result = await courseService.checkCoursePurchased({
+      userId,
+      courseId,
+    });
+    res.status(200).json({ result });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.log(err);
+    res.status(500).json("Internal Server Error");
+  }
+};
+
+const findClass = async (req, res) => {
+  try {
+    const { date, timeFrom, teacherName, timeTo } = req.body;
+    const result = await courseService.findClass({
+      date,
+      timeFrom,
+      teacherName,
+      timeTo,
+    });
+    res.status(200).json({ result });
+    // eslint-disable-next-line no-unused-vars
+  } catch (e) {
+    res.status(500).json("Internal Server Error");
+  }
+};
+
+module.exports = { getCourse, getCourseById, checkCoursePurchased, findClass };

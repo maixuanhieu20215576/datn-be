@@ -43,5 +43,14 @@ const constants = {
     success: "Success",
     failed: "Failed",
   },
+  classType: {
+    singleClass: "singleClass",
+    classByWeeks: "classByWeeks",
+  },
+  priceType: {
+    byDay: "byDay",
+    byCourse: "byCourse",
+  },
 };
+
 module.exports = { constants };
