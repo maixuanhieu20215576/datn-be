@@ -51,6 +51,22 @@ const constants = {
     byDay: "byDay",
     byCourse: "byCourse",
   },
+  languages: {
+    English: "Tiếng Anh",
+    Japanese: "Tiếng Nhật",
+    Chinese: "Tiếng Trung",
+    Korean: "Tiếng Hàn",
+    Thai: "Tiếng Thái",
+    Spanish: "Tiếng Tây Ban Nha",
+    German: "Tiếng Đức",
+    Arabic: "Tiếng Ả Rập",
+    Polish: "Tiếng Ba Lan",
+    French: "Tiếng Pháp",
+  },
+  classStatus: {
+    closed: "closed",
+    open: "open",
+  },
 };
 
 module.exports = { constants };

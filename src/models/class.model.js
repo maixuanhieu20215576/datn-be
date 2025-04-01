@@ -2,6 +2,10 @@ const { constants } = require("../constant");
 const mongoose = require("mongoose");
 
 const ClassSchema = mongoose.Schema({
+  className: {
+    type: String,
+    required: true,
+  },
   teacherId: {
     type: String,
     required: true,
@@ -39,6 +43,7 @@ const ClassSchema = mongoose.Schema({
     type: String,
     required: true,
     default: "open",
+    enum: constants.classStatus,
   },
   schedule: {
     type: [
@@ -66,6 +71,12 @@ const ClassSchema = mongoose.Schema({
     required: true,
     enum: constants.classType,
   },
+  thumbnail: {
+    type: String,
+  },
+  stringForSearching: {
+    type: String,
+  }
 });
 
 module.exports = mongoose.model("Class", ClassSchema);

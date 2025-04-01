@@ -1,3 +1,4 @@
+const { uploadImageToImgur } = require("../common/utils");
 const adminService = require("../services/admin.service");
 const fetchApplicationForms = async (req, res) => {
   try {
@@ -41,8 +42,57 @@ const fetchTeacherList = async (req, res) => {
 
 const createClass = async (req, res) => {
   try {
-    await adminService.createClass(req.body);
+    let thumbnail;
+    if (req.file) {
+      thumbnail = await uploadImageToImgur({ requestFile: req.file });
+    } else {
+      // Nếu không có file, sử dụng trực tiếp text được gửi
+      thumbnail = req.body.thumbnail;
+    }
+    await adminService.createClass(req.body, thumbnail);
     res.status(200).json("Create class successfully!");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const updateClass = async (req, res) => {
+  try {
+    let thumbnail;
+    if (req.file) {
+      thumbnail = await uploadImageToImgur({ requestFile: req.file });
+    } else {
+      // Nếu không có file, sử dụng trực tiếp text được gửi
+      thumbnail = req.body.thumbnail;
+    }
+    const { classId } = req.params;
+   const updatedClass = await adminService.updateClass(classId, req.body, thumbnail);
+    res.status(200).json(updatedClass);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const fetchClass = async (req, res) => {
+  try {
+    const { searchValue, page } = req.body;
+    const { classes, totalClasses } = await adminService.fetchClass({
+      searchValue,
+      page,
+    });
+    res.status(200).json({ classes, totalClasses });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const fetchClassById = async (req, res) => {
+  try {
+    const { classId } = req.params;
+    const { studentInfo, classInfo } = await adminService.fetchClassById({
+      classId,
+    });
+    res.status(200).json({ studentInfo, classInfo });
   } catch (err) {
     res.status(500).json(err);
   }
@@ -53,4 +103,7 @@ module.exports = {
   updateApplicationFormStatus,
   fetchTeacherList,
   createClass,
+  fetchClass,
+  fetchClassById,
+  updateClass,
 };

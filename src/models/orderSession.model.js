@@ -5,7 +5,19 @@ const OrderSessionSchema = mongoose.Schema(
     courseId: {
       type: String,
     },
+    classId: {
+      type: String
+    },
     userId: {
+      type: String,
+    },
+    username: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    phoneNumber: {
       type: String,
     },
     price: {

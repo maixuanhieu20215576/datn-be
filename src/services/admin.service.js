@@ -4,6 +4,8 @@ const { constants } = require("../constant");
 const ApplicationForm = require("../models/applicationForm.model");
 const User = require("../models/user.model");
 const Class = require("../models/class.model");
+const { removeVietnameseTone } = require("../common/utils");
+const orderSessionModel = require("../models/orderSession.model");
 
 const fetchApplicationForms = async ({
   page,
@@ -124,7 +126,13 @@ const getMatchingWeekDays = ({
   return result;
 };
 
-const createClass = async (requestBody) => {
+const getStringForSeach = ({ className, teacherName, language }) => {
+  const languageInVietnamese = constants.languages[language];
+  const rawString = `${className}-${teacherName}-${language}-${languageInVietnamese}`;
+  return removeVietnameseTone(rawString);
+};
+
+const createClass = async (requestBody, thumbnail) => {
   const {
     className,
     teachingLanguage,
@@ -141,19 +149,26 @@ const createClass = async (requestBody) => {
     startDayForClassByWeeks,
     endDayForClassByWeeks,
   } = requestBody;
+  const stringForSearch = getStringForSeach({
+    className,
+    teacherName,
+    language: teachingLanguage,
+  });
   try {
     if (classType === constants.classType.singleClass) {
       await Class.create({
         className,
         teacherId,
         teacherName,
-        maxStudent: maxStudent || 10000,
+        maxStudent: maxStudent || 0,
         classUrl,
         language: teachingLanguage,
         price,
         priceType,
         schedule: [{ date: schedule, timeFrom, timeTo }],
         classType: constants.classType.singleClass,
+        thumbnail,
+        stringForSearch,
       });
     }
 
@@ -175,15 +190,112 @@ const createClass = async (requestBody) => {
         className,
         teacherId,
         teacherName,
-        maxStudent: maxStudent || 10000,
+        maxStudent: maxStudent || 0,
         classUrl,
         language: teachingLanguage,
         price,
         priceType,
         schedule: scheduleForClassByWeeks,
         classType: constants.classType.classByWeeks,
+        thumbnail,
+        stringForSearch,
       });
     }
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const fetchClass = async ({ searchValue, page }) => {
+  try {
+    const clearSearchValue = removeVietnameseTone(searchValue);
+    const filter = new RegExp(clearSearchValue, "i");
+
+    const classes = await Class.find({
+      stringForSearch: { $regex: filter },
+    })
+      .skip((page - 1) * 18)
+      .limit(18);
+
+    const totalClasses = await Class.countDocuments({
+      stringForSearch: { $regex: filter },
+    });
+    return { classes, totalClasses };
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const fetchClassById = async ({ classId }) => {
+  try {
+    let classInfo = await Class.findById(classId);
+    const orderSessions = await orderSessionModel.find({
+      classId,
+      status: constants.paymentStatus.success,
+    });
+    const totalRevenue = _.sumBy(
+      orderSessions,
+      (orderSession) => orderSession.price
+    );
+    classInfo = classInfo.toJSON();
+    classInfo.totalRevenue = totalRevenue;
+    const totalStudent = orderSessions.length;
+    classInfo.totalStudent = totalStudent;
+    classInfo.revenuePerStudent = totalStudent
+      ? Math.round(totalRevenue / totalStudent)
+      : 0;
+    const studentInfo = [];
+    for (const orderSession of orderSessions) {
+      studentInfo.push({
+        studentName: orderSession.username,
+        email: orderSession.email,
+        phoneNumber: orderSession.phoneNumber,
+        paymentStatus: orderSession.status,
+      });
+    }
+    return { studentInfo, classInfo };
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const updateClass = async (classId, requestBody, thumbnail) => {
+  const { className, teacherName, teacherId, price, schedule, classUrl } =
+    requestBody;
+  try {
+    const classInfo = await Class.findById(classId);
+
+    if (!classInfo) {
+      throw new Error("Class not found");
+    }
+    const updateClassName = className || classInfo.className;
+    const updateTeacherName = teacherName || classInfo.teacherName;
+    const language = classInfo.language;
+    const updateStringForSearch = getStringForSeach({
+      className: updateClassName,
+      teacherName: updateTeacherName,
+      language,
+    });
+    const updatedClassData = {
+      className: updateClassName,
+      teacherId: teacherId || classInfo.teacherId,
+      teacherName: updateTeacherName,
+      price: price || classInfo.price,
+      thumbnail: thumbnail || classInfo.thumbnail,
+      schedule: JSON.parse(schedule) || classInfo.schedule,
+      classUrl: classUrl || classInfo.classUrl,
+      stringForSearch: updateStringForSearch,
+    };
+
+    // Cập nhật thông tin lớp học trong DB
+    const updatedClass = await Class.findByIdAndUpdate(
+      classId,
+      updatedClassData,
+      { new: true } // Trả về đối tượng đã được cập nhật
+    );
+
+    // Trả về dữ liệu sau khi cập nhật
+    return updatedClass;
   } catch (err) {
     throw new Error(err);
   }
@@ -194,4 +306,7 @@ module.exports = {
   fetchApplicationForms,
   updateApplicationFormStatus,
   createClass,
+  fetchClass,
+  fetchClassById,
+  updateClass,
 };
