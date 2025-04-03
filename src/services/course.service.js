@@ -3,6 +3,7 @@ const Course = require("../models/course.model");
 const Class = require("../models/class.model");
 const OrderSession = require("../models/orderSession.model");
 const { constants } = require("../constant");
+const classModel = require("../models/class.model");
 
 const _convertTimeToMilisecond = (time) => {
   const [hours, minutes] = time.split(":").map(Number);
@@ -84,17 +85,23 @@ const getCourseById = async (courseId) => {
   return course;
 };
 
-const createPaymentRequest = async ({ price, userId, courseId }) => {
+const createPaymentRequest = async ({ price, userId, courseId, classId }) => {
   const newOrder = await OrderSession.create({
     courseId,
     userId,
     price,
+    classId,
   });
   return _.toString(newOrder._id);
 };
 
-const checkCoursePurchased = async ({ userId, courseId }) => {
-  const order = await OrderSession.findOne({ userId, courseId });
+const checkCoursePurchased = async ({ userId, courseId, classId }) => {
+  let order;
+  if (classId) {
+    order = await OrderSession.findOne({ userId, classId, status: constants.paymentStatus.success });
+  } else {
+    order = await OrderSession.findOne({ userId, courseId, status: constants.paymentStatus.success });
+  }
   return !!order;
 };
 
@@ -112,10 +119,32 @@ const findClass = async ({ date, timeFrom, teacherName, timeTo }) => {
     filter.timeTo = { $lte: timeToMiliseconds };
   }
   if (teacherName) {
-    filter.teacherName = new RegExp(teacherName, "i");
+    filter.stringForSearch = new RegExp(teacherName, "i");
   }
   const classes = await Class.find(filter);
   return classes;
+};
+
+const getRegisteredClass = async ({ userId }) => {
+  try {
+    const orderSessions = await OrderSession.find(
+      { userId, status: constants.paymentStatus.success },
+      {
+        classId: 1,
+      }
+    );
+    const classes = [];
+    for (const orderSession of orderSessions) {
+      const classId = _.get(orderSession, "classId");
+      if (classId) {
+        const classDetail = await classModel.findById(classId);
+        classes.push(classDetail);
+      }
+    }
+    return classes;
+  } catch (err) {
+    throw new Error(err);
+  }
 };
 
 module.exports = {
@@ -124,4 +153,5 @@ module.exports = {
   createPaymentRequest,
   checkCoursePurchased,
   findClass,
+  getRegisteredClass,
 };

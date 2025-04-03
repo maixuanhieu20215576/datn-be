@@ -1,3 +1,4 @@
+const _ = require("lodash");
 const moment = require("moment");
 const { stringify } = require("qs");
 const { createHmac } = require("crypto");
@@ -5,6 +6,8 @@ const { Buffer } = require("buffer");
 const { createPaymentRequest } = require("../services/course.service");
 const orderSessionModel = require("../models/orderSession.model");
 const { constants } = require("../constant");
+const classModel = require("../models/class.model");
+const systemLogModel = require("../models/systemLog.model");
 
 require("dotenv").config();
 
@@ -17,7 +20,13 @@ const _sortObject = (obj) => {
   return sorted;
 };
 
-const paymentWithVnpay = async ({ total_amount, ipAddr, newOrderId, courseId }) => {
+const paymentWithVnpay = async ({
+  total_amount,
+  ipAddr,
+  newOrderId,
+  courseId,
+  classId,
+}) => {
   try {
     // eslint-disable-next-line no-undef
     const tmnCode = process.env.VNPAY_TMP_CODE;
@@ -25,8 +34,11 @@ const paymentWithVnpay = async ({ total_amount, ipAddr, newOrderId, courseId }) 
     const secretKey = `${process.env.VNPAY_SECRET_KEY}`;
     // eslint-disable-next-line no-undef
     const vnpUrl = `${process.env.VNPAY_URL}`;
-    // eslint-disable-next-line no-undef
-    const returnUrl = `${process.env.APP_BASE_ID}/course/${courseId}`;
+    const returnUrl = classId
+      ? // eslint-disable-next-line no-undef
+        `${process.env.APP_BASE_ID}/class-detail/${classId}`
+      : // eslint-disable-next-line no-undef
+        `${process.env.APP_BASE_ID}/course/${courseId}`;
 
     // Generate timestamps
     const date = moment().utcOffset(7);
@@ -83,15 +95,21 @@ const payment = async (req, res) => {
     if (ipAddr === "::1" || ipAddr === "::1%0") {
       ipAddr = "127.0.0.1";
     }
-    const { price, userId, courseId } = req.body;
+    const { price, userId, courseId, classId } = req.body;
 
-    const newOrderId = await createPaymentRequest({ userId, courseId, price });
+    const newOrderId = await createPaymentRequest({
+      userId,
+      courseId,
+      price,
+      classId,
+    });
 
     const paymentUrl = await paymentWithVnpay({
       total_amount: price,
       ipAddr,
       newOrderId,
       courseId,
+      classId,
     });
     res.status(200).json({ paymentUrl });
   } catch (error) {
@@ -115,16 +133,37 @@ const ipnVnpay = async (req, res) => {
   if (secureHash === signed) {
     const vnp_TransactionStatus = vnp_Params["vnp_TransactionStatus"];
     const vnp_TxnRef = vnp_Params["vnp_TxnRef"];
-    if (vnp_TransactionStatus === "00") {
-      await orderSessionModel.findByIdAndUpdate(vnp_TxnRef, {
-        status: constants.paymentStatus.success,
-      });
-    } else {
-      await orderSessionModel.findByIdAndUpdate(vnp_TxnRef, {
-        status: constants.paymentStatus.failed,
-      });
+
+    try {
+      if (vnp_TransactionStatus === "00") {
+        const orderSession = await orderSessionModel.findByIdAndUpdate(
+          vnp_TxnRef,
+          { status: constants.paymentStatus.success },
+          { new: true, projection: { classId: 1 } } // chỉ lấy classId
+        );
+
+        const classId = _.get(orderSession, "classId");
+        if (classId) {
+          await classModel.findByIdAndUpdate(classId, {
+            $inc: { currentStudent: 1 },
+          });
+        } else {
+          await systemLogModel.create({
+            logType: "IPN Fail",
+            logText: "ko co classId",
+          });
+        }
+      } else {
+        await orderSessionModel.findByIdAndUpdate(vnp_TxnRef, {
+          status: constants.paymentStatus.failed,
+        });
+      }
+
+      res.status(200).json({ RspCode: "00", Message: "success" });
+      // eslint-disable-next-line no-unused-vars
+    } catch (err) {
+      res.status(200).json({ RspCode: "00", Message: "success" });
     }
-    res.status(200).json({ RspCode: "00", Message: "success" });
   } else {
     res.status(200).json({ RspCode: "97", Message: "Fail checksum" });
   }

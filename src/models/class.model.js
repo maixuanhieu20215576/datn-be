@@ -74,8 +74,11 @@ const ClassSchema = mongoose.Schema({
   thumbnail: {
     type: String,
   },
-  stringForSearching: {
+  stringForSearch: {
     type: String,
+  },
+  stringForDisplayScheduleByDayOfWeeks: {
+    type: [String],
   }
 });
 

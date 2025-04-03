@@ -1,5 +1,7 @@
 const { uploadImageToImgur } = require("../common/utils");
 const adminService = require("../services/admin.service");
+
+
 const fetchApplicationForms = async (req, res) => {
   try {
     const { page, itemPerPage, filterStatus, userId } = req.body;
@@ -66,7 +68,11 @@ const updateClass = async (req, res) => {
       thumbnail = req.body.thumbnail;
     }
     const { classId } = req.params;
-   const updatedClass = await adminService.updateClass(classId, req.body, thumbnail);
+    const updatedClass = await adminService.updateClass(
+      classId,
+      req.body,
+      thumbnail
+    );
     res.status(200).json(updatedClass);
   } catch (err) {
     res.status(500).json(err);
@@ -76,6 +82,7 @@ const updateClass = async (req, res) => {
 const fetchClass = async (req, res) => {
   try {
     const { searchValue, page } = req.body;
+
     const { classes, totalClasses } = await adminService.fetchClass({
       searchValue,
       page,

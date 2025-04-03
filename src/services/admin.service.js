@@ -132,6 +132,28 @@ const getStringForSeach = ({ className, teacherName, language }) => {
   return removeVietnameseTone(rawString);
 };
 
+const getStringForDisplayScheduleByDayOfWeeks = ({
+  dayOfWeekStr,
+  timeFrom,
+  timeTo,
+  classType,
+}) => {
+  const daysOfWeek = {
+    Monday: "Thứ hai",
+    Tuesday: "Thứ ba",
+    Wednesday: "Thứ tư",
+    Thursday: "Thứ năm",
+    Friday: "Thứ sáu",
+    Saturday: "Thứ bảy",
+    Sunday: "Chủ nhật",
+  };
+
+  const dayInVietnamese = daysOfWeek[dayOfWeekStr];
+  if (classType === constants.classType.singleClass)
+    return `Ngày ${dayOfWeekStr}, từ ${timeFrom} tới ${timeTo}`;
+  return `${dayInVietnamese} hàng tuần, từ ${timeFrom} tới ${timeTo}`;
+};
+
 const createClass = async (requestBody, thumbnail) => {
   const {
     className,
@@ -149,13 +171,31 @@ const createClass = async (requestBody, thumbnail) => {
     startDayForClassByWeeks,
     endDayForClassByWeeks,
   } = requestBody;
+  const scheduleJSON = JSON.parse(schedule);
   const stringForSearch = getStringForSeach({
     className,
     teacherName,
     language: teachingLanguage,
   });
+  let stringForDisplayScheduleByDayOfWeeks = [];
   try {
     if (classType === constants.classType.singleClass) {
+      stringForDisplayScheduleByDayOfWeeks =
+        getStringForDisplayScheduleByDayOfWeeks({
+          dayOfWeekStr: scheduleJSON,
+          timeFrom,
+          timeTo,
+          classType,
+        });
+      const stringForDisplayScheduleItem =
+        (stringForDisplayScheduleByDayOfWeeks =
+          getStringForDisplayScheduleByDayOfWeeks({
+            dayOfWeekStr: scheduleJSON,
+            timeFrom,
+            timeTo,
+            classType,
+          }));
+      stringForDisplayScheduleByDayOfWeeks.push(stringForDisplayScheduleItem);
       await Class.create({
         className,
         teacherId,
@@ -165,7 +205,7 @@ const createClass = async (requestBody, thumbnail) => {
         language: teachingLanguage,
         price,
         priceType,
-        schedule: [{ date: schedule, timeFrom, timeTo }],
+        schedule: [{ date: scheduleJSON, timeFrom, timeTo }],
         classType: constants.classType.singleClass,
         thumbnail,
         stringForSearch,
@@ -175,7 +215,7 @@ const createClass = async (requestBody, thumbnail) => {
     if (classType === constants.classType.classByWeeks) {
       let scheduleForClassByWeeks = [];
 
-      for (const scheduleItem of schedule) {
+      for (const scheduleItem of scheduleJSON) {
         const matchedDates = getMatchingWeekDays({
           startStr: startDayForClassByWeeks,
           endStr: endDayForClassByWeeks,
@@ -183,6 +223,14 @@ const createClass = async (requestBody, thumbnail) => {
           timeFrom: scheduleItem.timeFrom,
           timeTo: scheduleItem.timeTo,
         });
+        const stringForDisplayScheduleItem =
+          getStringForDisplayScheduleByDayOfWeeks({
+            dayOfWeekStr: scheduleItem.dateOfWeek,
+            timeFrom: scheduleItem.timeFrom,
+            timeTo: scheduleItem.timeTo,
+            classType,
+          });
+        stringForDisplayScheduleByDayOfWeeks.push(stringForDisplayScheduleItem);
 
         scheduleForClassByWeeks = scheduleForClassByWeeks.concat(matchedDates);
       }
@@ -199,6 +247,7 @@ const createClass = async (requestBody, thumbnail) => {
         classType: constants.classType.classByWeeks,
         thumbnail,
         stringForSearch,
+        stringForDisplayScheduleByDayOfWeeks,
       });
     }
   } catch (err) {

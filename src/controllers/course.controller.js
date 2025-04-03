@@ -26,10 +26,11 @@ const getCourseById = async (req, res) => {
 
 const checkCoursePurchased = async (req, res) => {
   try {
-    const { userId, courseId } = req.body;
+    const { userId, courseId, classId } = req.body;
     const result = await courseService.checkCoursePurchased({
       userId,
       courseId,
+      classId,
     });
     res.status(200).json({ result });
   } catch (err) {
@@ -55,4 +56,20 @@ const findClass = async (req, res) => {
   }
 };
 
-module.exports = { getCourse, getCourseById, checkCoursePurchased, findClass };
+const getRegisteredClass = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const result = await courseService.getRegisteredClass({ userId });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
+
+module.exports = {
+  getCourse,
+  getCourseById,
+  checkCoursePurchased,
+  findClass,
+  getRegisteredClass,
+};
