@@ -79,7 +79,11 @@ const ClassSchema = mongoose.Schema({
   },
   stringForDisplayScheduleByDayOfWeeks: {
     type: [String],
-  }
+  },
+  rating: {
+    type: Number,
+    default: 0,
+  },
 });
 
 module.exports = mongoose.model("Class", ClassSchema);

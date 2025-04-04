@@ -13,6 +13,7 @@ const oneTimeJobRoute = require("./src/routes/oneTimeJob.route");
 const courseRoute = require("./src/routes/course.route");
 const paymentRoute = require("./src/routes/payment.route");
 const ipnRoute = require("./src/routes/ipn.route");
+const teacherRoute = require("./src/routes/teacher.route")
 
 app.use(helmet()); // Set security HTTP headers
 app.use(xss()); // Sanitize request data
@@ -26,6 +27,7 @@ app.use("/one-time-job", oneTimeJobRoute);
 app.use("/course", courseRoute);
 app.use("/payment", paymentRoute);
 app.use("/vnpay_ipn", ipnRoute);
+app.use("/teacher", teacherRoute);
 
 // eslint-disable-next-line no-undef
 const uri = process.env.MONGO_URI;

@@ -67,6 +67,10 @@ const constants = {
     closed: "closed",
     open: "open",
   },
+  attendanceStatus: {
+    absend: "absend",
+    present: "present",
+  },
 };
 
 module.exports = { constants };

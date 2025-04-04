@@ -1,0 +1,57 @@
+const mongoose = require("mongoose");
+const { constants } = require("../constant");
+const LearningProcessSchema = mongoose.Schema(
+  {
+    userId: {
+      type: String,
+      required: true,
+    },
+    userName: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    classId: {
+      type: String,
+      required: true,
+    },
+    teacherName: {
+      type: String,
+    },
+    teacherId: {
+      type: String,
+    },
+    attendanceHistory: [
+      {
+        classDate: {
+          type: String,
+        },
+        attendanceStatus: {
+          type: String,
+          enum: constants.attendanceStatus,
+        },
+      },
+    ],
+    subTeacherId: {
+      type: String,
+    },
+    subTeacherName: {
+      type: String,
+    },
+    ratingByUser: {
+      type: Number,
+    },
+    commentByUser: {
+      type: String,
+    },
+  },
+  {
+    timestamp: true,
+  }
+);
+
+module.exports = mongoose.model("LearningProcess", LearningProcessSchema);
