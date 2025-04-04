@@ -3,7 +3,8 @@ const { constants } = require("../constant");
 const LearningProcessSchema = mongoose.Schema(
   {
     userId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: true,
     },
     userName: {

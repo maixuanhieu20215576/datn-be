@@ -27,5 +27,40 @@ const getTeachingStatisticsByClass = async (req, res) => {
   } catch (err) {
     res.status(500).json(err);
   }
-}
-module.exports = { getTeachingStatistics, getTeachingStatisticsByClass };
+};
+
+const getTeacherProfile = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const teacherProfile = await teacherService.getTeacherProfile(teacherId);
+    res.status(200).json(teacherProfile);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getTeacherComments = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { page, limit } = req.query;
+
+    const { comments, totalPages } = await teacherService.getTeacherComments({
+      teacherId,
+      page,
+      limit,
+    });
+    res.status(200).json({
+      comments,
+      totalPages,
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+module.exports = {
+  getTeachingStatistics,
+  getTeachingStatisticsByClass,
+  getTeacherProfile,
+  getTeacherComments,
+};

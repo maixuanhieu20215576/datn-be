@@ -4,8 +4,11 @@ const orderSessionModel = require("../models/orderSession.model");
 const { constants } = require("../constant");
 const learningProcessModel = require("../models/learningProcess.model");
 const teachingHistoryModel = require("../models/teachingHistory.model");
-
+const User = require("../models/user.model");
 const moment = require("moment");
+const ApplicationForm = require("../models/applicationForm.model");
+const { default: mongoose } = require("mongoose");
+const Comment = require("../models/comment.model");
 
 const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
   try {
@@ -142,4 +145,96 @@ const getTeachingStatisticsByClass = async ({ teacherId, timePeriod }) => {
     throw new Error(err);
   }
 };
-module.exports = { getTeachingStatistics, getTeachingStatisticsByClass };
+
+const getTeacherProfile = async (teacherId) => {
+  try {
+    const teacherDetail = await User.findOne({
+      _id: teacherId,
+      role: constants.userRole.teacher,
+    });
+    if (!teacherDetail) {
+      throw new Error("Teacher not found");
+    }
+    const teacher = {
+      teacherName: teacherDetail.fullName,
+      phoneNumber: teacherDetail.phoneNumber,
+      email: teacherDetail.email,
+      avatar: teacherDetail.avatar,
+      teachingLanguage: _.map(
+        teacherDetail.teachingInfo.teachingLanguage,
+        (item) => constants.languages[item]
+      ),
+      startWorkAt: teacherDetail.teachingInfo.startWorkAt,
+    };
+
+    const applicationForms = await ApplicationForm.find({
+      userId: teacherId,
+      status: constants.applicationStatus.approved,
+    });
+
+    const teacherSkills = [];
+    for (const applicationForm of applicationForms) {
+      teacherSkills.push({
+        languageSkills: applicationForm.languageSkills,
+        teachingLanguage: applicationForm.teachingLanguage,
+      });
+    }
+
+    teacher.teacherSkills = teacherSkills;
+    const teachingClasses = await classModel.find({
+      teacherId,
+      status: constants.classStatus.open,
+    });
+
+    const teachingClass = [];
+    for (const teachingClassItem of teachingClasses) {
+      teachingClass.push({
+        classId: teachingClassItem._id,
+        className: teachingClassItem.className,
+      });
+    }
+    teacher.teachingClass = teachingClass;
+    return teacher;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getTeacherComments = async ({ teacherId, page, limit }) => {
+  try {
+    const teacherComments = await Comment.find({
+      teacherId: new mongoose.Types.ObjectId(teacherId),
+    })
+      .populate("userId", "fullName avatar")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const totalComments = await Comment.countDocuments({
+      teacherId: new mongoose.Types.ObjectId(teacherId),
+    });
+
+    const totalPages = Math.ceil(totalComments / limit);
+    const comments = teacherComments.map((comment) => ({
+      userId: comment.userId._id,
+      userName: comment.userId.fullName,
+      avatar: comment.userId.avatar,
+      rating: comment.rating,
+      content: comment.content,
+      createdAt: moment(comment.createdAt).format("YYYY-MM-DD"),
+    }));
+    return {
+      comments,
+      totalPages,
+    };
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+module.exports = {
+  getTeachingStatistics,
+  getTeachingStatisticsByClass,
+  getTeacherProfile,
+  getTeacherComments,
+};

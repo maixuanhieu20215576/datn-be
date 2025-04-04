@@ -4,4 +4,6 @@ const teacherController = require("../controllers/teacher.controller");
 
 router.get('/statistics/:teacherId', teacherController.getTeachingStatistics);
 router.get('/statistics-by-class/:teacherId', teacherController.getTeachingStatisticsByClass);
+router.get('/profile/:teacherId', teacherController.getTeacherProfile);
+router.get('/comments/:teacherId', teacherController.getTeacherComments);
 module.exports = router;

@@ -7,5 +7,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post("/", upload.single("image"), userController.updateUserInfo);
 router.get("/apply-teaching", userController.getTeachingApplication);
 router.post("/apply-teaching", upload.single("file"), userController.applyTeaching);
+router.post('/post-comment', userController.postComment);
 router.get("/:userId", userController.getUserInfo);
 module.exports = router;

@@ -1,7 +1,10 @@
 /* eslint-disable no-undef */
 require("dotenv").config();
 const userService = require("../services/user.service");
-const { updateFileToGoogleDrive, uploadImageToImgur } = require("../common/utils");
+const {
+  updateFileToGoogleDrive,
+  uploadImageToImgur,
+} = require("../common/utils");
 
 const getUserInfo = async (req, res) => {
   try {
@@ -88,9 +91,20 @@ const getTeachingApplication = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const postComment = async (req, res) => {
+  try {
+    const { content, rating, teacherId, userId, teacherProfile } = req.body;
+    const newComment = await userService.postComment({ teacherProfile, content, rating, teacherId, userId });
+    res.status(200).json(newComment);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
   applyTeaching,
   getTeachingApplication,
+  postComment,
 };
