@@ -4,17 +4,8 @@ const LearningProcessSchema = mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
-    },
-    userName: {
-      type: String,
-    },
-    email: {
-      type: String,
-    },
-    phoneNumber: {
-      type: String,
     },
     classId: {
       type: String,
@@ -24,6 +15,9 @@ const LearningProcessSchema = mongoose.Schema(
       type: String,
     },
     teacherId: {
+      type: String,
+    },
+    className: {
       type: String,
     },
     attendanceHistory: [

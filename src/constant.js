@@ -70,6 +70,8 @@ const constants = {
   attendanceStatus: {
     absend: "absend",
     present: "present",
+    ontime: "ontime",
+    late: "late",
   },
 };
 

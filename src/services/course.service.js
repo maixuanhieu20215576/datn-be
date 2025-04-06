@@ -1,3 +1,4 @@
+const moment = require("moment");
 const _ = require("lodash");
 const Course = require("../models/course.model");
 const Class = require("../models/class.model");
@@ -98,9 +99,17 @@ const createPaymentRequest = async ({ price, userId, courseId, classId }) => {
 const checkCoursePurchased = async ({ userId, courseId, classId }) => {
   let order;
   if (classId) {
-    order = await OrderSession.findOne({ userId, classId, status: constants.paymentStatus.success });
+    order = await OrderSession.findOne({
+      userId,
+      classId,
+      status: constants.paymentStatus.success,
+    });
   } else {
-    order = await OrderSession.findOne({ userId, courseId, status: constants.paymentStatus.success });
+    order = await OrderSession.findOne({
+      userId,
+      courseId,
+      status: constants.paymentStatus.success,
+    });
   }
   return !!order;
 };
@@ -138,7 +147,41 @@ const getRegisteredClass = async ({ userId }) => {
       const classId = _.get(orderSession, "classId");
       if (classId) {
         const classDetail = await classModel.findById(classId);
-        classes.push(classDetail);
+        let timeString;
+        let canJoinClass;
+        for (const schedule of classDetail.schedule) {
+          const dateMoment = `${schedule.date} ${schedule.timeFrom}`;
+          if (
+            moment(dateMoment, "DD/MM/YYYY HH:mm").isBefore(
+              moment(new Date(), "DD/MM/YYYY HH:mm")
+            )
+          ) {
+            continue;
+          }
+          const followingClassTimeInMiliseconds =
+            moment(dateMoment, "DD/MM/YYYY HH:mm").valueOf() - Date.now();
+          canJoinClass =
+            followingClassTimeInMiliseconds < 15 * 60 * 1000 * 1000; 
+ 
+          const duration = moment.duration(followingClassTimeInMiliseconds);
+          const days = Math.floor(duration.asDays());
+          const hours = duration.hours();
+          const minutes = duration.minutes();
+
+          timeString = `${days} ngày ${hours} giờ ${minutes} phút`;
+          break;
+        }
+        classes.push({
+          _id: classDetail._id,
+          className: classDetail.className,
+          teacherName: classDetail.teacherName,
+          language: classDetail.language,
+          currentStudent: classDetail.currentStudent,
+          classUrl: classDetail.classUrl,
+          thumbnail: classDetail.thumbnail,
+          followingClassTime: timeString,
+          canJoinClass,
+        });
       }
     }
     return classes;

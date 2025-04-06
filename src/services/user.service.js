@@ -6,6 +6,8 @@ const { constants } = require("../constant");
 const Comment = require("../models/comment.model");
 const learningProcessModel = require("../models/learningProcess.model");
 const orderSessionModel = require("../models/orderSession.model");
+const classModel = require("../models/class.model");
+const moment = require("moment");
 
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
@@ -111,6 +113,7 @@ const postComment = async ({
   rating,
   teacherId,
   teacherProfile,
+  classId,
 }) => {
   try {
     const appliedClasses = await learningProcessModel.find({
@@ -123,7 +126,7 @@ const postComment = async ({
     );
     const orderSessions = await orderSessionModel.find({
       userId,
-      classId: {$in: teacherClassIds},
+      classId: { $in: classId ? [classId] : teacherClassIds },
       status: constants.paymentStatus.success,
     });
 
@@ -136,7 +139,98 @@ const postComment = async ({
       rating,
       teacherId: new mongoose.Types.ObjectId(teacherId),
     });
+
+    if (classId) {
+      const commentsOfClass = await Comment.find({
+        classId,
+      });
+      const totalRating = commentsOfClass.reduce(
+        (acc, comment) => acc + comment.rating,
+        0
+      );
+      const averageRating = commentsOfClass.length
+        ? totalRating / commentsOfClass.length
+        : 0;
+      await classModel.findByIdAndUpdate(classId, {
+        rating: averageRating,
+      });
+    }
     return comment;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getCalendar = async (userId) => {
+  try {
+    const classIds = await orderSessionModel
+      .find({ userId })
+      .distinct("classId");
+
+    const classes = await classModel
+      .find({ _id: { $in: classIds } })
+      .populate("schedule.date")
+      .lean();
+
+    const calendar = classes.reduce((acc, classItem) => {
+      const { schedule, className, _id } = classItem;
+      const events = schedule.map((item) => {
+        return {
+          id: item._id,
+          title: className,
+          timeText: moment(item.date, "DD/MM/YYYY").format("YYYY-MM-DD"),
+          timeFrom: item.timeFrom,
+          timeTo: item.timeTo,
+          classId: _id,
+        };
+      });
+      return acc.concat(events);
+    }, []);
+
+    return calendar;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const attendanceCheck = async (userId, classId) => {
+  try {
+    const learningProcess = await learningProcessModel.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      classId,
+    });
+    if (!learningProcess) {
+      const classDetail = await classModel.findById(classId);
+
+      await learningProcessModel.create({
+        userId: new mongoose.Types.ObjectId(userId),
+        classId,
+        teacherId: classDetail.teacherId,
+        teacherName: classDetail.teacherName,
+        className: classDetail.className,
+        attendanceHistory: [],
+      });
+    }
+
+    const classDetail = await classModel.findById(classId);
+    for (const schedule of classDetail.schedule) {
+      if (schedule.date === moment(Date.now()).format("DD/MM/YYYY")) {
+        const dateMoment = `${schedule.date} ${schedule.timeFrom}`;
+        const attendanceHistory = {
+          classDate: schedule.date,
+          attendanceStatus: moment(dateMoment, "DD/MM/YYYY HH:mm").isBefore(
+            moment(Date.now(), "DD/MM/YYYY HH:mm")
+          )
+            ? constants.attendanceStatus.ontime
+            : constants.attendanceStatus.late,
+        };
+        await learningProcessModel.findOneAndUpdate(
+          { userId: new mongoose.Types.ObjectId(userId), classId },
+          { $push: { attendanceHistory } }
+        );
+        return;
+      }
+    }
   } catch (err) {
     throw new Error(err);
   }
@@ -148,4 +242,6 @@ module.exports = {
   applyTeaching,
   getTeachingApplication,
   postComment,
+  getCalendar,
+  attendanceCheck,
 };

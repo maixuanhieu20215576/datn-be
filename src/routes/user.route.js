@@ -9,4 +9,6 @@ router.get("/apply-teaching", userController.getTeachingApplication);
 router.post("/apply-teaching", upload.single("file"), userController.applyTeaching);
 router.post('/post-comment', userController.postComment);
 router.get("/:userId", userController.getUserInfo);
+router.get("/get-calendar/:userId", userController.getCalendar);
+router.post('/attendance-check', userController.attendanceCheck);
 module.exports = router;

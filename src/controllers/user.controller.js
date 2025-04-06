@@ -94,9 +94,37 @@ const getTeachingApplication = async (req, res) => {
 
 const postComment = async (req, res) => {
   try {
-    const { content, rating, teacherId, userId, teacherProfile } = req.body;
-    const newComment = await userService.postComment({ teacherProfile, content, rating, teacherId, userId });
+    const { content, rating, teacherId, userId, teacherProfile, classId } =
+      req.body;
+    const newComment = await userService.postComment({
+      teacherProfile,
+      content,
+      rating,
+      teacherId,
+      userId,
+      classId,
+    });
     res.status(200).json(newComment);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getCalendar = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const calendar = await userService.getCalendar(userId);
+    res.status(200).json(calendar);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const attendanceCheck = async (req, res) => {
+  try {
+    const { userId, classId } = req.body;
+    const attendance = await userService.attendanceCheck(userId, classId);
+    res.status(200).json(attendance);
   } catch (err) {
     res.status(500).json(err);
   }
@@ -107,4 +135,6 @@ module.exports = {
   applyTeaching,
   getTeachingApplication,
   postComment,
+  getCalendar,
+  attendanceCheck,
 };
