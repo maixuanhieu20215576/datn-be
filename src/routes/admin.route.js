@@ -23,6 +23,9 @@ router.post(
 );
 
 router.post("/fetch-class", adminController.fetchClass);
-router.get("/fetch-class/:classId", adminController.fetchClassById)
+router.get("/fetch-class/:classId", adminController.fetchClassById);
+router.get("/get-order-statistics", adminController.getOrderStatistics);
+router.get("/get-monthly-sales", adminController.getMonthlySales);
+router.get("/get-language-frequent", adminController.getLanguageFrequent);
 
 module.exports = router;

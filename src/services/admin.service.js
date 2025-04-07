@@ -4,7 +4,7 @@ const { constants } = require("../constant");
 const ApplicationForm = require("../models/applicationForm.model");
 const User = require("../models/user.model");
 const Class = require("../models/class.model");
-const { removeVietnameseTone } = require("../common/utils");
+const { removeVietnameseTone, getCompareRatio } = require("../common/utils");
 const orderSessionModel = require("../models/orderSession.model");
 
 const fetchApplicationForms = async ({
@@ -295,10 +295,12 @@ const fetchClassById = async ({ classId }) => {
       : 0;
     const studentInfo = [];
     for (const orderSession of orderSessions) {
+      const userId = _.get(orderSession, "userId");
+      const user = await User.findById(userId);
       studentInfo.push({
-        studentName: orderSession.username,
-        email: orderSession.email,
-        phoneNumber: orderSession.phoneNumber,
+        studentName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
         paymentStatus: orderSession.status,
       });
     }
@@ -350,6 +352,129 @@ const updateClass = async (classId, requestBody, thumbnail) => {
   }
 };
 
+const getOrderStatistics = async () => {
+  try {
+    const startOfCurrentMonth = moment().startOf("month").toDate();
+    const endOfCurrentMonth = moment().endOf("month").toDate();
+
+    const startOfLastMonth = moment()
+      .subtract(1, "month")
+      .startOf("month")
+      .toDate();
+    const endOfLastMonth = moment()
+      .subtract(1, "month")
+      .endOf("month")
+      .toDate();
+
+    const currentMonthSessions = await orderSessionModel.find({
+      status: constants.paymentStatus.success,
+      createdAt: { $gte: startOfCurrentMonth, $lte: endOfCurrentMonth },
+    });
+
+    const lastMonthSessions = await orderSessionModel.find({
+      status: constants.paymentStatus.success,
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+    });
+
+    const totalRevenue = _.sumBy(
+      currentMonthSessions,
+      (orderSession) => orderSession.price
+    );
+
+    const totalRevenueLastMonth = _.sumBy(
+      lastMonthSessions,
+      (orderSession) => orderSession.price
+    );
+    const comparedTotalRevenue = getCompareRatio(
+      totalRevenue,
+      totalRevenueLastMonth
+    );
+    const totalStudents = await User.countDocuments({
+      role: constants.userRole.student,
+    });
+
+    const totalStudentLastMonth = await User.countDocuments({
+      role: constants.userRole.student,
+      createdAt: { $lte: endOfLastMonth },
+    });
+
+    const comparedTotalStudents = getCompareRatio(
+      totalStudents,
+      totalStudentLastMonth
+    );
+
+    return {
+      totalRevenue,
+      comparedTotalRevenue,
+      totalStudents,
+      comparedTotalStudents,
+    };
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getMonthlySales = async () => {
+  const currentYear = moment().year();
+  const monthlyRevenue = [];
+
+  for (let month = 0; month < 12; month++) {
+    const startOfMonth = moment({ year: currentYear, month })
+      .startOf("month")
+      .toDate();
+    const endOfMonth = moment({ year: currentYear, month })
+      .endOf("month")
+      .toDate();
+
+    const sessions = await orderSessionModel.find({
+      status: constants.paymentStatus.success,
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+    });
+
+    const revenue = _.sumBy(sessions, (session) => session.price);
+    monthlyRevenue.push(revenue);
+  }
+
+  return monthlyRevenue;
+};
+
+const getLanguageFrequent = async () => {
+  try {
+    const classes = await Class.find({
+      currentStudent: { $gt: 0 },
+    });
+    const languageCounts = [];
+
+    for (const language of Object.keys(constants.languages)) {
+      languageCounts.push({
+        language,
+        count: 0,
+        percentage: 0,
+      });
+    }
+
+    let totalStudents = 0;
+    classes.forEach((classItem) => {
+      const { language, currentStudent } = classItem;
+      totalStudents += currentStudent;
+      const index = languageCounts.findIndex(
+        (item) => item.language === language
+      );
+      if (index !== -1) {
+        languageCounts[index].count += currentStudent;
+      }
+    });
+    for (const languageCount of languageCounts) {
+      const { count } = languageCount;
+      languageCount.percentage = totalStudents
+        ? Math.round((count / totalStudents) * 1000) / 10
+        : 0;
+    }
+    return languageCounts;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   fetchTeacherList,
   fetchApplicationForms,
@@ -358,4 +483,7 @@ module.exports = {
   fetchClass,
   fetchClassById,
   updateClass,
+  getOrderStatistics,
+  getMonthlySales,
+  getLanguageFrequent,
 };

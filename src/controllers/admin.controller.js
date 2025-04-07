@@ -1,7 +1,6 @@
 const { uploadImageToImgur } = require("../common/utils");
 const adminService = require("../services/admin.service");
 
-
 const fetchApplicationForms = async (req, res) => {
   try {
     const { page, itemPerPage, filterStatus, userId } = req.body;
@@ -105,6 +104,32 @@ const fetchClassById = async (req, res) => {
   }
 };
 
+const getOrderStatistics = async (req, res) => {
+  try {
+    const orderStatistics = await adminService.getOrderStatistics();
+    res.status(200).json(orderStatistics);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getMonthlySales = async (req, res) => {
+  try {
+    const monthlySales = await adminService.getMonthlySales();
+    res.status(200).json(monthlySales);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getLanguageFrequent = async (req, res) => {
+  try {
+    const languageFrequent = await adminService.getLanguageFrequent();
+    res.status(200).json(languageFrequent);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   fetchApplicationForms,
   updateApplicationFormStatus,
@@ -113,4 +138,7 @@ module.exports = {
   fetchClass,
   fetchClassById,
   updateClass,
+  getOrderStatistics,
+  getMonthlySales,
+  getLanguageFrequent,
 };
