@@ -130,6 +130,51 @@ const getLanguageFrequent = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+const getTeachersSalary = async (req, res) => {
+  try {
+    const { filterStatus, searchTerm } = req.body;
+    const salary = await adminService.getTeachersSalary({
+      salaryPaymentStatus: filterStatus,
+      teacherName: searchTerm,
+    });
+    res.status(200).json(salary);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getVietQRPayment = async (req, res) => {
+  try {
+    const { teacherId, amount, year, month } = req.body;
+    const vietQRPaymentUrl = await adminService.getVietQRPayment({
+      teacherId,
+      amount,
+      month,
+      year,
+    });
+    res.status(200).json(vietQRPaymentUrl);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const salaryPaymentComplete = async (req, res) => {
+  try {
+    const { teacherId, year, month, paymentByAdminId, paymentByAdminName } =
+      req.body;
+    const salaryPayment = await adminService.salaryPaymentComplete({
+      teacherId,
+      paymentByAdminId,
+      paymentByAdminName,
+      month,
+      year,
+    });
+    res.status(200).json(salaryPayment);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   fetchApplicationForms,
   updateApplicationFormStatus,
@@ -141,4 +186,7 @@ module.exports = {
   getOrderStatistics,
   getMonthlySales,
   getLanguageFrequent,
+  getTeachersSalary,
+  getVietQRPayment,
+  salaryPaymentComplete,
 };

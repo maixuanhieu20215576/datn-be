@@ -6,6 +6,8 @@ const User = require("../models/user.model");
 const Class = require("../models/class.model");
 const { removeVietnameseTone, getCompareRatio } = require("../common/utils");
 const orderSessionModel = require("../models/orderSession.model");
+const SalaryModel = require("../models/salary.model");
+const vietQRBank = require("../models/vietQr.model");
 
 const fetchApplicationForms = async ({
   page,
@@ -475,6 +477,73 @@ const getLanguageFrequent = async () => {
     throw new Error(err);
   }
 };
+
+const getTeachersSalary = async ({ salaryPaymentStatus, teacherName }) => {
+  try {
+    let salary = await SalaryModel.find({}).populate("teacherId");
+    if (salaryPaymentStatus) {
+      salary = _.filter(salary, (item) => {
+        return item.status === salaryPaymentStatus;
+      });
+    }
+    if (teacherName) {
+      salary = _.filter(salary, (item) => {
+        return removeVietnameseTone(item.teacherId.fullName).includes(
+          removeVietnameseTone(teacherName)
+        );
+      });
+    }
+    return salary;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getVietQRPayment = async ({ teacherId, amount, month, year }) => {
+  try {
+    const teacher = await User.findById(teacherId);
+    const bankAccountNumber = _.get(
+      teacher,
+      "bankPaymentInfo.bankAccountNumber"
+    );
+    const bankName = _.get(teacher, "bankPaymentInfo.bankName");
+
+    const vietQrBank = await vietQRBank.findOne({
+      bankName: bankName,
+    });
+    const bankCode = _.get(vietQrBank, "bankCode");
+    const vietQrPaymentUrl = `https://img.vietqr.io/image/${bankCode}-${bankAccountNumber}-compact2.png?amount=${amount}&addInfo=thanh%20toan%20luong%20thang%20${month}%20${year}`;
+    return vietQrPaymentUrl;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const salaryPaymentComplete = async ({
+  teacherId,
+  month,
+  year,
+  paymentByAdminId,
+  paymentByAdminName,
+}) => {
+  try {
+    await SalaryModel.findOneAndUpdate(
+      {
+        teacherId,
+        month,
+        year,
+      },
+      {
+        status: constants.salaryPaymentStatus.paid,
+        paymentByAdminId,
+        paymentByAdminName,
+        paymentDate: new Date(),
+      }
+    );
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   fetchTeacherList,
   fetchApplicationForms,
@@ -486,4 +555,7 @@ module.exports = {
   getOrderStatistics,
   getMonthlySales,
   getLanguageFrequent,
+  getTeachersSalary,
+  getVietQRPayment,
+  salaryPaymentComplete,
 };

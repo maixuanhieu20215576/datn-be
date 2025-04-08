@@ -8,6 +8,8 @@ const orderSessionModel = require("../models/orderSession.model");
 const { constants } = require("../constant");
 const classModel = require("../models/class.model");
 const systemLogModel = require("../models/systemLog.model");
+const SalaryModel = require("../models/salary.model");
+const { default: mongoose } = require("mongoose");
 
 require("dotenv").config();
 
@@ -120,6 +122,7 @@ const payment = async (req, res) => {
 const ipnVnpay = async (req, res) => {
   let vnp_Params = req.query;
   const secureHash = vnp_Params["vnp_SecureHash"];
+  const price = vnp_Params["vnp_Amount"] / 100;
 
   delete vnp_Params["vnp_SecureHash"];
   delete vnp_Params["vnp_SecureHashType"];
@@ -144,9 +147,25 @@ const ipnVnpay = async (req, res) => {
 
         const classId = _.get(orderSession, "classId");
         if (classId) {
-          await classModel.findByIdAndUpdate(classId, {
+          const classDetail = await classModel.findByIdAndUpdate(classId, {
             $inc: { currentStudent: 1 },
           });
+
+          const teacherId = classDetail.teacherId;
+          await SalaryModel.findOneAndUpdate(
+            {
+              teacherId: new mongoose.Types.ObjectId(teacherId),
+              month: moment().format("MM"),
+              year: moment().format("YYYY"),
+            },
+            {
+              $inc: { salary: (price * 9) / 10 },
+            },
+            {
+              new: true,
+              upsert: true,
+            }
+          );
         } else {
           await systemLogModel.create({
             logType: "IPN Fail",

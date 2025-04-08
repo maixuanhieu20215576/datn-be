@@ -8,7 +8,7 @@ const learningProcessModel = require("../models/learningProcess.model");
 const orderSessionModel = require("../models/orderSession.model");
 const classModel = require("../models/class.model");
 const moment = require("moment");
-
+const vietQrBanks = require("../models/vietQr.model");
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
   return user;
@@ -62,11 +62,12 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
     bankAccountNumber,
     bankName,
   } = requestBody;
-  const teachingLanguageArray = teachingLanguage
-    .split(",")
-    .map((lang) => lang.trim())
-    .filter((lang) => lang.length > 0);
-  /* const updatedUser = await User.findByIdAndUpdate(
+  try {
+    const teachingLanguageArray = teachingLanguage
+      .split(",")
+      .map((lang) => lang.trim())
+      .filter((lang) => lang.length > 0);
+    /* const updatedUser = await User.findByIdAndUpdate(
     userId,
     {
       teachingApplication: {
@@ -79,24 +80,27 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
     },
     { new: true }
   ); */
-  const user = await User.findById(userId);
-  const fullName = _.get(user, "fullName", "");
-  const teachingApplication = await ApplicationForm.create({
-    userId,
-    languageSkills,
-    teachingLanguage: teachingLanguageArray,
-    teachingCommitment,
-    CV: fileUrl,
-    status: constants.applicationStatus.pending,
-    fullName,
-    bankPaymentInfo: {
-      bankName,
-      bankAccountNumber,
-    },
-  });
+    const user = await User.findById(userId);
+    const fullName = _.get(user, "fullName", "");
+    const teachingApplication = await ApplicationForm.create({
+      userId,
+      languageSkills,
+      teachingLanguage: teachingLanguageArray,
+      teachingCommitment,
+      CV: fileUrl,
+      status: constants.applicationStatus.pending,
+      fullName,
+      bankPaymentInfo: {
+        bankName,
+        bankAccountNumber,
+      },
+    });
 
-  // const teachingApplication = _.get(updatedUser, "teachingApplication");
-  return teachingApplication;
+    // const teachingApplication = _.get(updatedUser, "teachingApplication");
+    return teachingApplication;
+  } catch (err) {
+    throw new Error(err);
+  }
 };
 
 const getTeachingApplication = async (userId) => {
@@ -236,6 +240,14 @@ const attendanceCheck = async (userId, classId) => {
   }
 };
 
+const getBankList = async () => {
+  try {
+    const bankList = await vietQrBanks.find({}).distinct("bankName");
+    return bankList;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -244,4 +256,5 @@ module.exports = {
   postComment,
   getCalendar,
   attendanceCheck,
+  getBankList,
 };

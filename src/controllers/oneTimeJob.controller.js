@@ -2,6 +2,13 @@ const _ = require("lodash");
 const Question = require("../models/question.model");
 const { constants } = require("../constant");
 const ReadingQuestion = require("../models/readingQuestion.model");
+const orderSessionModel = require("../models/orderSession.model");
+const mongoose = require("mongoose");
+const moment = require("moment");
+const axios = require("axios");
+const classModel = require("../models/class.model");
+const SalaryModel = require("../models/salary.model");
+const VietQrBank = require("../models/vietQr.model");
 const updateQuestions = async (req, res) => {
   try {
     const allQuestions = await Question.find({
@@ -33,4 +40,73 @@ const updateQuestions = async (req, res) => {
   }
 };
 
-module.exports = { updateQuestions };
+const updateSalaries = async (req, res) => {
+  try {
+    const orderSessions = await orderSessionModel.find({
+      status: constants.paymentStatus.success,
+    });
+
+    for (const orderSession of orderSessions) {
+      const classId = _.get(orderSession, "classId");
+      if (classId) {
+        const classDetail = await classModel.findById(classId);
+
+        const teacherId = classDetail.teacherId;
+        const price = _.get(orderSession, "price");
+        const createdAt = _.get(orderSession, "createdAt");
+        const createdAtDate = new Date(createdAt);
+        await SalaryModel.findOneAndUpdate(
+          {
+            teacherId: new mongoose.Types.ObjectId(teacherId),
+            month: moment(createdAtDate).format("MM"),
+            year: moment(createdAtDate).format("YYYY"),
+          },
+          {
+            $inc: { salary: (price * 9) / 10 },
+          },
+          {
+            new: true,
+            upsert: true,
+          }
+        );
+      }
+    }
+    res.status(200).json("OK");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getVietQRBankCode = async (req, res) => {
+  try {
+    const response = await axios.get("https://api.vietqr.io/v2/banks");
+    const vietQrBanks = response.data.data;
+    for (const vietQrBank of vietQrBanks) {
+      const {
+        id,
+        code,
+        bin,
+        logo,
+        transferSupported,
+        lookupSupported,
+        shortName,
+        name,
+      } = vietQrBank;
+
+      await VietQrBank.create({
+        bankId: id,
+        bankCode: code,
+        bankBin: bin,
+        logo,
+        transferSupported,
+        lookupSupported,
+        shortName,
+        bankName: name,
+      });
+    }
+    res.status(200).json("OK");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+module.exports = { updateQuestions, updateSalaries, getVietQRBankCode };

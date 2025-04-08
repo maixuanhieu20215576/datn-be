@@ -62,6 +62,8 @@ const constants = {
     Arabic: "Tiếng Ả Rập",
     Polish: "Tiếng Ba Lan",
     French: "Tiếng Pháp",
+    Russian: "Tiếng Nga",
+    Italian: "Tiếng Ý",
   },
   classStatus: {
     closed: "closed",
@@ -72,6 +74,10 @@ const constants = {
     present: "present",
     ontime: "ontime",
     late: "late",
+  },
+  salaryPaymentStatus: {
+    unpaid: "unpaid",
+    paid: "paid",
   },
 };
 

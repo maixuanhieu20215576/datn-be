@@ -129,6 +129,15 @@ const attendanceCheck = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+const getBankList = async (req, res) => {
+  try {
+    const bankList = await userService.getBankList();
+    res.status(200).json(bankList);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -137,4 +146,5 @@ module.exports = {
   postComment,
   getCalendar,
   attendanceCheck,
+  getBankList,
 };
