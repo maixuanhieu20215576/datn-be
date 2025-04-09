@@ -52,6 +52,21 @@ const updateApplicationFormStatus = async ({
     { new: true }
   );
 
+  await Notification.create({
+    sourceUserId: new mongoose.Types.ObjectId("67c28edae0336995eebf59d9"),
+    targetUser: [
+      {
+        targetUserId: updatedApplicationForm.userId,
+        status: constants.notificationStatus.new,
+      },
+    ],
+    title: "Cập nhật về đơn đăng ký giảng dạy",
+    content:
+      updateStatus === constants.applicationStatus.approved
+        ? "Đơn đăng ký đã được chấp nhận"
+        : "Đơn đăng ký đã bị từ chối",
+  });
+
   const userId = _.get(updatedApplicationForm, "userId");
   const teachingLanguage = _.get(updatedApplicationForm, "teachingLanguage");
 

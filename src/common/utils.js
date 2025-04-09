@@ -5,6 +5,8 @@ const FormData = require("form-data");
 const { GoogleAuth } = require("google-auth-library");
 const { google } = require("googleapis");
 const { Readable } = require("stream");
+const Notification = require("../models/notification.model");
+const { default: mongoose } = require("mongoose");
 
 const _getImgurAccessToken = async () => {
   const response = await axios.post(
@@ -116,9 +118,24 @@ const getCompareRatio = (a, b) => {
   return -(100 - Math.round((a / b) * 10000) / 100);
 };
 
+const createNotification = async ({
+  content,
+  title,
+  sourceUserId,
+  targetUser,
+}) => {
+  await Notification.create({
+    sourceUserId: new mongoose.Types.ObjectId(sourceUserId),
+    targetUser,
+    title,
+    content,
+  });
+};
+
 module.exports = {
   uploadImageToImgur,
   updateFileToGoogleDrive,
   removeVietnameseTone,
   getCompareRatio,
+  createNotification,
 };

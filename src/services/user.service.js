@@ -10,6 +10,7 @@ const classModel = require("../models/class.model");
 const moment = require("moment");
 const vietQrBanks = require("../models/vietQr.model");
 const Notification = require("../models/notification.model");
+const { createNotification } = require("../common/utils");
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
   return user;
@@ -96,8 +97,15 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
         bankAccountNumber,
       },
     });
-
-    // const teachingApplication = _.get(updatedUser, "teachingApplication");
+    await createNotification({
+      sourceUserId: userId,
+      targetUser: {
+        targetUserId: "67c28edae0336995eebf59d9",
+        status: constants.notificationStatus.new,
+      },
+      title: 'Có đơn đăng ký giảng dạy mới',
+      content: `Người dùng ${fullName} đã đăng ký giảng dạy`
+    });
     return teachingApplication;
   } catch (err) {
     throw new Error(err);
