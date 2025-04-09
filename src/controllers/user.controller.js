@@ -138,6 +138,29 @@ const getBankList = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+const getNotification = async (req, res) => {
+  try {
+    const { userId, page, status } = req.body;
+    const notifications = await userService.getNotification({
+      userId,
+      page,
+      status,
+    });
+    res.status(200).json(notifications);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const markAsRead = async (req, res) => {
+  try {
+    await userService.markAllAsRead(req.body);
+    res.status(200).json("Cập nhật thành công");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -147,4 +170,6 @@ module.exports = {
   getCalendar,
   attendanceCheck,
   getBankList,
+  getNotification,
+  markAsRead,
 };

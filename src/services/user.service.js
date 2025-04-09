@@ -9,6 +9,7 @@ const orderSessionModel = require("../models/orderSession.model");
 const classModel = require("../models/class.model");
 const moment = require("moment");
 const vietQrBanks = require("../models/vietQr.model");
+const Notification = require("../models/notification.model");
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
   return user;
@@ -248,6 +249,55 @@ const getBankList = async () => {
     throw new Error(err);
   }
 };
+
+const getNotification = async ({ userId, page, status }) => {
+  try {
+    let filter = {
+      targetUser: {
+        $elemMatch: {
+          targetUserId: userId,
+        },
+      },
+    };
+
+    if (status) {
+      filter.targetUser.$elemMatch.status = status;
+    }
+    const notifications = await Notification.find(filter)
+      .populate("sourceUserId")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * 10)
+      .limit(10);
+
+    for (let i = 0; i < notifications.length; ++i) {
+      const targetUser = _.find(
+        notifications[i].targetUser,
+        (item) => item.targetUserId === userId
+      );
+      const status = _.get(targetUser, "status");
+      const notificationObj = notifications[i].toObject();
+      notificationObj.status = status;
+      notifications[i] = notificationObj;
+    }
+    return notifications;
+  } catch (err) {
+    throw new Error(err.message || err);
+  }
+};
+
+const markAllAsRead = async (requestBody) => {
+  try {
+    const { notificationIds, userId } = requestBody;
+    for (const notificationId of notificationIds) {
+      await Notification.updateOne(
+        { _id: notificationId, "targetUser.targetUserId": userId },
+        { $set: { "targetUser.$.status": constants.notificationStatus.seen } }
+      );
+    }
+  } catch (err) {
+    throw new Error(err.message || err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -257,4 +307,6 @@ module.exports = {
   getCalendar,
   attendanceCheck,
   getBankList,
+  getNotification,
+  markAllAsRead,
 };

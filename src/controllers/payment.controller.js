@@ -10,7 +10,8 @@ const classModel = require("../models/class.model");
 const systemLogModel = require("../models/systemLog.model");
 const SalaryModel = require("../models/salary.model");
 const { default: mongoose } = require("mongoose");
-
+const Notification = require("../models/notification.model");
+const learningProcessModel = require("../models/learningProcess.model");
 require("dotenv").config();
 
 const _sortObject = (obj) => {
@@ -166,6 +167,25 @@ const ipnVnpay = async (req, res) => {
               upsert: true,
             }
           );
+          await learningProcessModel.create({
+            userId: new mongoose.Types.ObjectId(orderSession.userId),
+            classId,
+            teacherId: classDetail.teacherId,
+            teacherName: classDetail.teacherName,
+            className: classDetail.className,
+            attendanceHistory: [],
+          });
+          await Notification.create({
+            sourceUserId: new mongoose.Types.ObjectId(orderSession.userId),
+            targetUser: [
+              {
+                targetUserId: classDetail.teacherId,
+                status: constants.notificationStatus.new,
+              },
+            ],
+            title: "Học viên mới",
+            content: `Lớp ${classDetail.className} có học viên mới đăng ký!`,
+          });
         } else {
           await systemLogModel.create({
             logType: "IPN Fail",

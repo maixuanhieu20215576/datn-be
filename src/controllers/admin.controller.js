@@ -170,6 +170,7 @@ const salaryPaymentComplete = async (req, res) => {
       month,
       year,
     });
+   
     res.status(200).json(salaryPayment);
   } catch (err) {
     res.status(500).json(err);

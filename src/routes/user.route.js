@@ -11,5 +11,7 @@ router.post('/post-comment', userController.postComment);
 router.get("/get-calendar/:userId", userController.getCalendar);
 router.post('/attendance-check', userController.attendanceCheck);
 router.get('/get-bank-list', userController.getBankList);
+router.post('/get-notification', userController.getNotification)
+router.post('/mark-all-notification-as-read', userController.markAsRead)
 router.get("/:userId", userController.getUserInfo);
 module.exports = router;

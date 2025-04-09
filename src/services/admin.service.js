@@ -8,7 +8,9 @@ const { removeVietnameseTone, getCompareRatio } = require("../common/utils");
 const orderSessionModel = require("../models/orderSession.model");
 const SalaryModel = require("../models/salary.model");
 const vietQRBank = require("../models/vietQr.model");
-
+const Notification = require("../models/notification.model");
+const mongoose = require("mongoose");
+const learningProcessModel = require("../models/learningProcess.model");
 const fetchApplicationForms = async ({
   page,
   itemPerPage,
@@ -346,8 +348,19 @@ const updateClass = async (classId, requestBody, thumbnail) => {
       updatedClassData,
       { new: true } // Trả về đối tượng đã được cập nhật
     );
-
-    // Trả về dữ liệu sau khi cập nhật
+    if (JSON.parse(schedule) !== classInfo.schedule) {
+      const learningProcesses = await learningProcessModel.find({ classId });
+      const targetUser = _.map(learningProcesses, (item) => ({
+        targetUserId: _.toString(item.userId),
+        status: constants.notificationStatus.new,
+      }));
+      await Notification.create({
+        sourceUserId: new mongoose.Types.ObjectId(updatedClassData.teacherId),
+        targetUser,
+        title: "Cập nhật lịch học",
+        content: `Lớp học ${updateClassName} có sự cập nhật lịch học`,
+      });
+    }
     return updatedClass;
   } catch (err) {
     throw new Error(err);
@@ -540,6 +553,14 @@ const salaryPaymentComplete = async ({
         paymentDate: new Date(),
       }
     );
+    await Notification.create({
+      sourceUserId: new mongoose.Types.ObjectId(paymentByAdminId),
+      targetUser: [
+        { targetUserId: teacherId, status: constants.notificationStatus.new },
+      ],
+      title: "Thanh toán lương",
+      content: `Bạn vừa được thanh toán lương tháng ${month}/${year}`,
+    });
   } catch (err) {
     throw new Error(err);
   }

@@ -79,6 +79,10 @@ const constants = {
     unpaid: "unpaid",
     paid: "paid",
   },
+  notificationStatus: {
+    seen: "seen",
+    new: "new",
+  },
 };
 
 module.exports = { constants };
