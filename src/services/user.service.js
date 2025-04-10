@@ -309,6 +309,13 @@ const markAllAsRead = async (requestBody) => {
   }
 };
 
+const _getTimeString = (num) => {
+  if (num < 60000) return "Vừa xong";
+  if (num < 60 * 60000) return `${parseInt(num / 60000)} phút trước`;
+  if (num < 24 * 60 * 60000) return `${parseInt(num / (60000 * 60))} giờ trước`;
+  return  `${parseInt(num / (60000 * 60 * 24))} ngày trước`
+};
+
 const fetchChatHistory = async ({ userId }) => {
   try {
     const messages = await Message.find({
@@ -327,11 +334,10 @@ const fetchChatHistory = async ({ userId }) => {
     for (const message of messages) {
       if (message.senderId._id.equals(userId)) {
         if (!_.includes(existedUser, String(message.receiverId._id))) {
-
           chats.push({
             name: message.receiverId.fullName,
             avatar: message.receiverId.avatar,
-            time: `${parseInt((Date.now() - message.createdAt.getTime()) / (1000 * 60))} phút`,
+            time: _getTimeString((Date.now() - message.createdAt.getTime())),
             opponentId: _.toString(message.receiverId._id),
           });
           existedUser.push(String(message.receiverId._id));

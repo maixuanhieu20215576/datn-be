@@ -185,6 +185,41 @@ const loadMessageHistory = async (req, res) => {
   }
 };
 
+const chatWithGpt = async (req, res) => {
+  try {
+    const { userMessage } = req.body;
+    const response = await userService.chatWithGpt(userMessage);
+    res.status(200).json(response);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const uploadFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    let fileUrl;
+    const fileBuffer = req.file.buffer;
+    const fileName = req.file.originalname;
+    const fileMimeType = req.file.mimetype;
+    if (fileMimeType === "image/png" || fileMimeType === "image/jpeg") {
+      fileUrl = await uploadImageToImgur({ requestFile: req.file });
+    } else {
+      fileUrl = await updateFileToGoogleDrive(
+        fileBuffer,
+        fileName,
+        fileMimeType
+      );
+    }
+    res.status(200).json(fileUrl);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
+
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -198,4 +233,6 @@ module.exports = {
   markAsRead,
   fetchChatHistory,
   loadMessageHistory,
+  chatWithGpt,
+  uploadFile,
 };

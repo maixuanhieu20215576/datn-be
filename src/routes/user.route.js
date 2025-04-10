@@ -19,5 +19,7 @@ router.post("/get-notification", userController.getNotification);
 router.post("/mark-all-notification-as-read", userController.markAsRead);
 router.get("/fetch-chat-history/:userId", userController.fetchChatHistory);
 router.post("/load-message-history", userController.loadMessageHistory);
+router.post("/chat-with-gpt", userController.chatWithGpt);
+router.post("/upload-file", upload.single("file"), userController.uploadFile);
 router.get("/:userId", userController.getUserInfo);
 module.exports = router;
