@@ -9,6 +9,8 @@ const axios = require("axios");
 const classModel = require("../models/class.model");
 const SalaryModel = require("../models/salary.model");
 const VietQrBank = require("../models/vietQr.model");
+const User = require("../models/user.model");
+const Message = require("../models/message.model");
 const updateQuestions = async (req, res) => {
   try {
     const allQuestions = await Question.find({
@@ -109,4 +111,28 @@ const getVietQRBankCode = async (req, res) => {
     res.status(500).json(err);
   }
 };
-module.exports = { updateQuestions, updateSalaries, getVietQRBankCode };
+
+const createAdminMessage = async (req, res) => {
+  try {
+    const users = await User.find();
+    for (const user of users) {
+      if (user.role !== constants.userRole.admin) {
+        await Message.create({
+          senderId: new mongoose.Types.ObjectId("67c28edae0336995eebf59d9"),
+          receiverId: user._id,
+          content:
+            "Chào mừng đến với nền tảng học trực tuyến EzLearn ! Đây là đoạn hội thoại để bạn có thể trình bày các thắc mắc, khiếu nại và đóng góp cho hệ thống",
+        });
+      }
+    }
+    res.status(200).json("ok");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+module.exports = {
+  updateQuestions,
+  updateSalaries,
+  getVietQRBankCode,
+  createAdminMessage,
+};

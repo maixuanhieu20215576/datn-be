@@ -11,6 +11,8 @@ const moment = require("moment");
 const vietQrBanks = require("../models/vietQr.model");
 const Notification = require("../models/notification.model");
 const { createNotification } = require("../common/utils");
+const Message = require("../models/message.model");
+
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
   return user;
@@ -103,8 +105,8 @@ const applyTeaching = async (userId, fileUrl, requestBody) => {
         targetUserId: "67c28edae0336995eebf59d9",
         status: constants.notificationStatus.new,
       },
-      title: 'Có đơn đăng ký giảng dạy mới',
-      content: `Người dùng ${fullName} đã đăng ký giảng dạy`
+      title: "Có đơn đăng ký giảng dạy mới",
+      content: `Người dùng ${fullName} đã đăng ký giảng dạy`,
     });
     return teachingApplication;
   } catch (err) {
@@ -306,6 +308,74 @@ const markAllAsRead = async (requestBody) => {
     throw new Error(err.message || err);
   }
 };
+
+const fetchChatHistory = async ({ userId }) => {
+  try {
+    const messages = await Message.find({
+      $or: [
+        { senderId: new mongoose.Types.ObjectId(userId) },
+        { receiverId: new mongoose.Types.ObjectId(userId) },
+      ],
+    })
+      .populate("senderId")
+      .populate("receiverId")
+      .sort({ createdAt: -1 });
+
+    const chats = [];
+    const existedUser = [];
+
+    for (const message of messages) {
+      if (message.senderId._id.equals(userId)) {
+        if (!_.includes(existedUser, String(message.receiverId._id))) {
+
+          chats.push({
+            name: message.receiverId.fullName,
+            avatar: message.receiverId.avatar,
+            time: `${parseInt((Date.now() - message.createdAt.getTime()) / (1000 * 60))} phút`,
+            opponentId: _.toString(message.receiverId._id),
+          });
+          existedUser.push(String(message.receiverId._id));
+        }
+      } else {
+        if (!_.includes(existedUser, String(message.senderId._id))) {
+          chats.push({
+            name:
+              message.senderId.role === "admin"
+                ? "Quản trị viên"
+                : message.senderId.fullName,
+            avatar: message.senderId.avatar,
+            time: `${parseInt((Date.now() - message.createdAt.getTime()) / (1000 * 60))} phút`,
+            opponentId: _.toString(message.senderId._id),
+          });
+          existedUser.push(String(message.senderId._id));
+        }
+      }
+    }
+    return chats;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const loadMessageHistory = async ({ userId, opponentId }) => {
+  try {
+    const messages = await Message.find({
+      $or: [
+        {
+          senderId: new mongoose.Types.ObjectId(userId),
+          receiverId: new mongoose.Types.ObjectId(opponentId),
+        },
+        {
+          receiverId: new mongoose.Types.ObjectId(userId),
+          senderId: new mongoose.Types.ObjectId(opponentId),
+        },
+      ],
+    }).sort({ createdAt: 1 });
+    return messages;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -317,4 +387,6 @@ module.exports = {
   getBankList,
   getNotification,
   markAllAsRead,
+  fetchChatHistory,
+  loadMessageHistory,
 };

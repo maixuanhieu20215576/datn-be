@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const moment = require("moment");
 const User = require("../models/user.model");
+const { Message } = require("../models/message.model");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 const generateToken = (
@@ -70,10 +72,21 @@ const register = async ({ username, password, fullName, email }) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword, fullName, email });
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+      fullName,
+      email,
+    });
 
     await newUser.save();
 
+    await Message.create({
+      senderId: new mongoose.Types.ObjectId("67c28edae0336995eebf59d9"),
+      receiverId: newUser._id,
+      content:
+        "Chào mừng đến với nền tảng học trực tuyến EzLearn ! Đây là đoạn hội thoại để bạn có thể trình bày các thắc mắc, khiếu nại và đóng góp cho hệ thống",
+    });
     return { user: newUser };
   } catch (error) {
     throw new Error(error.message);

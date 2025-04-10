@@ -161,6 +161,30 @@ const markAsRead = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+const fetchChatHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const chats = await userService.fetchChatHistory({ userId });
+    res.status(200).json(chats);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const loadMessageHistory = async (req, res) => {
+  try {
+    const { userId, opponentId } = req.body;
+    const messages = await userService.loadMessageHistory({
+      userId,
+      opponentId,
+    });
+    res.status(200).json(messages);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -172,4 +196,6 @@ module.exports = {
   getBankList,
   getNotification,
   markAsRead,
+  fetchChatHistory,
+  loadMessageHistory,
 };

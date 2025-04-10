@@ -1,4 +1,5 @@
 /* eslint-disable no-undef */
+const _ = require("lodash");
 require("dotenv").config();
 const axios = require("axios");
 const FormData = require("form-data");
@@ -132,10 +133,17 @@ const createNotification = async ({
   });
 };
 
+const getIntegerNumber = (num) => {
+  const numStr = _.toString(num);
+  const numIntString = _.split(numStr, ".")[0]; // Lấy phần trước dấu .
+  return _.toNumber(numIntString);
+};
+
 module.exports = {
   uploadImageToImgur,
   updateFileToGoogleDrive,
   removeVietnameseTone,
   getCompareRatio,
   createNotification,
+  getIntegerNumber,
 };
