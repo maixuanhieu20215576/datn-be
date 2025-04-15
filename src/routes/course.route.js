@@ -6,6 +6,8 @@ router.post("/get-courses", courseController.getCourse);
 router.post("/check", courseController.checkCoursePurchased);
 router.post("/get-class", courseController.findClass);
 router.post("/get-registered-class", courseController.getRegisteredClass);
+router.get("/get-course-unit/:courseId", courseController.getCourseUnit);
+router.post('/get-unit-content', courseController.getUnitContent)
 router.get("/:id", courseController.getCourseById);
 
 module.exports = router;

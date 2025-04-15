@@ -83,6 +83,10 @@ const constants = {
     seen: "seen",
     new: "new",
   },
+  courseLearningProcessStatus: {
+    done: "done",
+    undone: "undone",
+  },
 };
 
 module.exports = { constants };

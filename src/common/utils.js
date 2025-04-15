@@ -8,6 +8,7 @@ const { google } = require("googleapis");
 const { Readable } = require("stream");
 const Notification = require("../models/notification.model");
 const { default: mongoose } = require("mongoose");
+const s3 = require("../s3");
 
 const _getImgurAccessToken = async () => {
   const response = await axios.post(
@@ -62,6 +63,44 @@ const updateFileToGoogleDrive = async (fileBuffer, fileName, fileMimeType) => {
 
   const fileUrl = `https://drive.google.com/file/d/${file.data.id}/view`;
   return fileUrl;
+};
+
+const getGoogleDriveFile = async (req, res) => {
+  const { fileId } = req.query;
+
+  if (!fileId || typeof fileId !== "string") {
+    return res.status(400).json({ error: "Missing fileId" });
+  }
+
+  try {
+    // eslint-disable-next-line no-undef
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    const auth = new GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    });
+
+    const drive = google.drive({ version: "v3", auth });
+
+    const response = await drive.files.get(
+      {
+        fileId: fileId,
+        alt: "media",
+      },
+      { responseType: "arraybuffer" }
+    );
+    const fileBuffer = Buffer.from(response.data);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline");
+    res.setHeader("Content-Length", fileBuffer.length);
+    res.setHeader("Access-Control-Allow-Origin", "*"); // allow iframe
+    res.setHeader("X-Frame-Options", "ALLOWALL"); // critical for iframe
+    res.setHeader("Content-Security-Policy", "frame-ancestors *");
+
+    res.send(fileBuffer);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 };
 
 const uploadImageToImgur = async ({ requestFile }) => {
@@ -139,6 +178,19 @@ const getIntegerNumber = (num) => {
   return _.toNumber(numIntString);
 };
 
+const uploadFileToS3 = async (req) => {
+  const file = req.file;
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET_NAME,
+    Key: Date.now() + "-" + file.originalname,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+  const data = await s3.upload(params).promise();
+  return data.Location;
+};
+
 module.exports = {
   uploadImageToImgur,
   updateFileToGoogleDrive,
@@ -146,4 +198,6 @@ module.exports = {
   getCompareRatio,
   createNotification,
   getIntegerNumber,
+  getGoogleDriveFile,
+  uploadFileToS3,
 };

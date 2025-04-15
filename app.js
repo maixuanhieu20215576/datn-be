@@ -18,6 +18,7 @@ const paymentRoute = require("./src/routes/payment.route");
 const ipnRoute = require("./src/routes/ipn.route");
 const teacherRoute = require("./src/routes/teacher.route");
 const Message = require("./src/models/message.model");
+const { getGoogleDriveFile } = require("./src/common/utils");
 
 app.use(helmet()); // Set security HTTP headers
 app.use(xss()); // Sanitize request data
@@ -32,6 +33,8 @@ app.use("/course", courseRoute);
 app.use("/payment", paymentRoute);
 app.use("/vnpay_ipn", ipnRoute);
 app.use("/teacher", teacherRoute);
+
+app.get("/api/proxy-pdf", getGoogleDriveFile);
 
 // eslint-disable-next-line no-undef
 const uri = process.env.MONGO_URI;
@@ -64,7 +67,6 @@ socketIo.on("connection", (socket) => {
   socket.emit("getId", socket.id);
 
   socket.on("sendDataClient", async (data) => {
-    console.log(data)
     await Message.create({
       senderId: new mongoose.Types.ObjectId(data.data.senderId),
       receiverId: new mongoose.Types.ObjectId(data.data.receiverId),

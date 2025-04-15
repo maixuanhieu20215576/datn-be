@@ -5,7 +5,8 @@ const Class = require("../models/class.model");
 const OrderSession = require("../models/orderSession.model");
 const { constants } = require("../constant");
 const classModel = require("../models/class.model");
-
+const learningProcessModel = require("../models/learningProcess.model");
+const mongoose = require("mongoose");
 const _convertTimeToMilisecond = (time) => {
   const [hours, minutes] = time.split(":").map(Number);
   return (hours * 60 + minutes) * 60 * 1000;
@@ -161,8 +162,8 @@ const getRegisteredClass = async ({ userId }) => {
           const followingClassTimeInMiliseconds =
             moment(dateMoment, "DD/MM/YYYY HH:mm").valueOf() - Date.now();
           canJoinClass =
-            followingClassTimeInMiliseconds < 15 * 60 * 1000 * 1000; 
- 
+            followingClassTimeInMiliseconds < 15 * 60 * 1000 * 1000;
+
           const duration = moment.duration(followingClassTimeInMiliseconds);
           const days = Math.floor(duration.asDays());
           const hours = duration.hours();
@@ -190,6 +191,105 @@ const getRegisteredClass = async ({ userId }) => {
   }
 };
 
+const getCourseUnit = async ({ courseId }) => {
+  try {
+    const courseDetail = await Course.findById(courseId);
+    return courseDetail;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const _getUnitLearningStatus = (learningProcess, unitId) => {
+  if (_.isEmpty(_.get(learningProcess, "courseLearningProcess", [])))
+    return constants.courseLearningProcessStatus.undone;
+
+  for (const unitLearningProcess of learningProcess.courseLearningProcess) {
+    if (unitLearningProcess.unitId === unitId)
+      return unitLearningProcess.status;
+  }
+  return constants.courseLearningProcessStatus.undone;
+};
+
+const getUnitContent = async ({ courseId, lectureId, userId }) => {
+  try {
+    const courseDetail = await Course.findById(courseId);
+    if (!courseDetail) {
+      throw new Error("Course not found");
+    }
+
+    for (
+      let unitIndex = 0;
+      unitIndex < courseDetail.units.length;
+      unitIndex++
+    ) {
+      const unit = courseDetail.units[unitIndex];
+
+      for (
+        let contentIndex = 0;
+        contentIndex < unit.unitContent.length;
+        contentIndex++
+      ) {
+        let lectureContent = unit.unitContent[contentIndex];
+
+        if (_.toString(lectureContent._id) === lectureId) {
+          const lectureContentObj =
+            typeof lectureContent.toObject === "function"
+              ? lectureContent.toObject()
+              : lectureContent;
+
+          if (_.includes(lectureContentObj.unitLecture, "drive")) {
+            lectureContentObj.lectureType = "pdf";
+          } else {
+            lectureContentObj.lectureType = "video";
+          }
+
+          let nextLectureId = null;
+          if (contentIndex + 1 < unit.unitContent.length) {
+            nextLectureId = _.toString(unit.unitContent[contentIndex + 1]._id);
+          } else if (unitIndex + 1 < courseDetail.units.length) {
+            const nextUnit = courseDetail.units[unitIndex + 1];
+            if (nextUnit.unitContent.length > 0) {
+              nextLectureId = _.toString(nextUnit.unitContent[0]._id);
+            }
+          }
+
+          let lastLectureId = null;
+          if (contentIndex - 1 >= 0) {
+            lastLectureId = _.toString(unit.unitContent[contentIndex - 1]._id);
+          } else if (unitIndex - 1 >= 0) {
+            const prevUnit = courseDetail.units[unitIndex - 1];
+            if (prevUnit.unitContent.length > 0) {
+              lastLectureId = _.toString(
+                prevUnit.unitContent[prevUnit.unitContent.length - 1]._id
+              );
+            }
+          }
+          const learningProcess = await learningProcessModel.findOne({
+            userId: new mongoose.Types.ObjectId(userId),
+            courseId,
+          });
+
+          const status = _getUnitLearningStatus(learningProcess, lectureId);
+
+          return {
+            lectureContent: lectureContentObj,
+            parentUnit: unit.unitName,
+            courseName: courseDetail.course_name,
+            nextLectureId: nextLectureId,
+            lastLectureId: lastLectureId,
+            status,
+          };
+        }
+      }
+    }
+
+    return null; // Không tìm thấy lectureId
+  } catch (err) {
+    throw new Error(err.stack || "Something went wrong");
+  }
+};
+
 module.exports = {
   getCourse,
   getCourseById,
@@ -197,4 +297,6 @@ module.exports = {
   checkCoursePurchased,
   findClass,
   getRegisteredClass,
+  getCourseUnit,
+  getUnitContent,
 };

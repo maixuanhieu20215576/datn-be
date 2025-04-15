@@ -39,6 +39,24 @@ const CourseSchema = mongoose.Schema(
     thumbnail: {
       type: String,
     },
+    units: [
+      {
+        unitName: {
+          type: String,
+        },
+        unitContent: [
+          {
+            childUnitName: String,
+            unitOverview: {
+              type: String,
+            },
+            unitLecture: {
+              type: String,
+            },
+          },
+        ],
+      },
+    ],
   },
   {
     timestamps: true,

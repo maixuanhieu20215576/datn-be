@@ -9,7 +9,6 @@ const LearningProcessSchema = mongoose.Schema(
     },
     classId: {
       type: String,
-      required: true,
     },
     teacherName: {
       type: String,
@@ -43,6 +42,21 @@ const LearningProcessSchema = mongoose.Schema(
     commentByUser: {
       type: String,
     },
+    // for course learning
+    courseId: {
+      type: String,
+    },
+    courseLearningProcess: [
+      {  
+        unitId: {
+          type: String,
+        },
+        status: {
+          type: String,
+          enum: constants.courseLearningProcessStatus,
+        },
+      },
+    ],
   },
   {
     timestamp: true,

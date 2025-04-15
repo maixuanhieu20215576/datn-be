@@ -66,10 +66,45 @@ const getRegisteredClass = async (req, res) => {
   }
 };
 
+const getCourseUnit = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const result = await courseService.getCourseUnit({ courseId });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
+
+const getUnitContent = async (req, res) => {
+  try {
+    const { lectureId, courseId, userId } = req.body;
+    const {
+      lectureContent,
+      parentUnit,
+      courseName,
+      nextLectureId,
+      lastLectureId,
+      status,
+    } = await courseService.getUnitContent({ lectureId, courseId, userId });
+    res.status(200).json({
+      lectureContent,
+      parentUnit,
+      courseName,
+      nextLectureId,
+      lastLectureId,
+      status,
+    });
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
 module.exports = {
   getCourse,
   getCourseById,
   checkCoursePurchased,
   findClass,
   getRegisteredClass,
+  getCourseUnit,
+  getUnitContent,
 };

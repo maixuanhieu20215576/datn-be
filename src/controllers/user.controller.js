@@ -4,6 +4,7 @@ const userService = require("../services/user.service");
 const {
   updateFileToGoogleDrive,
   uploadImageToImgur,
+  uploadFileToS3,
 } = require("../common/utils");
 
 const getUserInfo = async (req, res) => {
@@ -28,7 +29,7 @@ const updateUserInfo = async (req, res) => {
     let avatar;
 
     if (req.file) {
-      avatar = await uploadImageToImgur({ requestFile: req.file });
+      avatar = await uploadFileToS3(req);
     } else {
       // Nếu không có file, sử dụng trực tiếp text được gửi
       avatar = req.body.avatar;
