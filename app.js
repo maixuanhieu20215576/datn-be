@@ -16,6 +16,7 @@ const oneTimeJobRoute = require("./src/routes/oneTimeJob.route");
 const courseRoute = require("./src/routes/course.route");
 const paymentRoute = require("./src/routes/payment.route");
 const ipnRoute = require("./src/routes/ipn.route");
+const s3Route = require('./src/routes/s3.route')
 const teacherRoute = require("./src/routes/teacher.route");
 const Message = require("./src/models/message.model");
 const { getGoogleDriveFile } = require("./src/common/utils");
@@ -35,7 +36,7 @@ app.use("/vnpay_ipn", ipnRoute);
 app.use("/teacher", teacherRoute);
 
 app.get("/api/proxy-pdf", getGoogleDriveFile);
-
+app.use("/s3", s3Route);
 // eslint-disable-next-line no-undef
 const uri = process.env.MONGO_URI;
 mongoose
