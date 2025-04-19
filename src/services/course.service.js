@@ -11,7 +11,7 @@ const _convertTimeToMilisecond = (time) => {
   const [hours, minutes] = time.split(":").map(Number);
   return (hours * 60 + minutes) * 60 * 1000;
 };
-
+const { uploadFileToS3 } = require("../common/utils");
 const getCourse = async (requestBody) => {
   const {
     language,
@@ -217,51 +217,46 @@ const getUnitContent = async ({ courseId, lectureId, userId }) => {
     if (!courseDetail) {
       throw new Error("Course not found");
     }
-
     for (
-      let unitIndex = 0;
-      unitIndex < courseDetail.units.length;
-      unitIndex++
+      let lectureIndex = 0;
+      lectureIndex < courseDetail.lectures.length;
+      lectureIndex++
     ) {
-      const unit = courseDetail.units[unitIndex];
+      const lecture = courseDetail.lectures[lectureIndex];
 
-      for (
-        let contentIndex = 0;
-        contentIndex < unit.unitContent.length;
-        contentIndex++
-      ) {
-        let lectureContent = unit.unitContent[contentIndex];
+      for (let unitIndex = 0; unitIndex < lecture.units.length; unitIndex++) {
+        let unitContent = lecture.units[unitIndex];
 
-        if (_.toString(lectureContent._id) === lectureId) {
-          const lectureContentObj =
-            typeof lectureContent.toObject === "function"
-              ? lectureContent.toObject()
-              : lectureContent;
-
-          if (_.includes(lectureContentObj.unitLecture, "drive")) {
-            lectureContentObj.lectureType = "pdf";
-          } else {
-            lectureContentObj.lectureType = "video";
+        if (_.toString(unitContent._id) === lectureId) {
+          const unitContentObj =
+            typeof unitContent.toObject === "function"
+              ? unitContent.toObject()
+              : unitContent;
+          if (_.includes(unitContentObj.fileUrl, "pdf")) {
+            unitContentObj.lectureType = "pdf";
+          }
+          if (_.includes(unitContentObj.fileUrl, "mp4")) {
+            unitContentObj.lectureType = "mp4";
           }
 
-          let nextLectureId = null;
-          if (contentIndex + 1 < unit.unitContent.length) {
-            nextLectureId = _.toString(unit.unitContent[contentIndex + 1]._id);
-          } else if (unitIndex + 1 < courseDetail.units.length) {
-            const nextUnit = courseDetail.units[unitIndex + 1];
-            if (nextUnit.unitContent.length > 0) {
-              nextLectureId = _.toString(nextUnit.unitContent[0]._id);
+          let nextLectureId = '';
+          if (unitIndex + 1 < lecture.units.length) {
+            nextLectureId = _.toString(lecture.units[unitIndex + 1]._id);
+          } else if (lectureIndex + 1 < courseDetail.lectures.length) {
+            const nextLecture = courseDetail.lectures[lectureIndex + 1];
+            if (nextLecture.units.length > 0) {
+              nextLectureId = _.toString(nextLecture.units[0]._id);
             }
           }
 
-          let lastLectureId = null;
-          if (contentIndex - 1 >= 0) {
-            lastLectureId = _.toString(unit.unitContent[contentIndex - 1]._id);
-          } else if (unitIndex - 1 >= 0) {
-            const prevUnit = courseDetail.units[unitIndex - 1];
-            if (prevUnit.unitContent.length > 0) {
+          let lastLectureId = '';
+          if (unitIndex - 1 >= 0) {
+            lastLectureId = _.toString(lecture.units[unitIndex - 1]._id);
+          } else if (lectureIndex - 1 >= 0) {
+            const prevLecture = courseDetail.lectures[lectureIndex - 1];
+            if (prevLecture.units.length > 0) {
               lastLectureId = _.toString(
-                prevUnit.unitContent[prevUnit.unitContent.length - 1]._id
+                prevLecture.units[prevLecture.units.length - 1]._id
               );
             }
           }
@@ -273,8 +268,8 @@ const getUnitContent = async ({ courseId, lectureId, userId }) => {
           const status = _getUnitLearningStatus(learningProcess, lectureId);
 
           return {
-            lectureContent: lectureContentObj,
-            parentUnit: unit.unitName,
+            lectureContent: unitContentObj,
+            parentUnit: lecture.name,
             courseName: courseDetail.course_name,
             nextLectureId: nextLectureId,
             lastLectureId: lastLectureId,
@@ -290,6 +285,60 @@ const getUnitContent = async ({ courseId, lectureId, userId }) => {
   }
 };
 
+const createCourse = async (req) => {
+  try {
+    const {
+      courseName,
+      instructor,
+      originalPrice,
+      discountedPrice,
+      language,
+      lectures: lecturesRaw,
+    } = req.body;
+
+    const files = req.files || [];
+
+    const thumbnailFile = files.find((file) => file.fieldname === "thumbnail");
+    let thumbnailUrl = null;
+    if (thumbnailFile) {
+      thumbnailUrl = await uploadFileToS3(thumbnailFile);
+    }
+
+    const lectures = JSON.parse(lecturesRaw);
+
+    for (let i = 0; i < lectures.length; i++) {
+      const lecture = lectures[i];
+      for (let j = 0; j < lecture.units.length; j++) {
+        const unit = lecture.units[j];
+        const fileFieldName = unit.fileFieldName;
+
+        const matchedFile = files.find((f) => f.fieldname === fileFieldName);
+
+        if (matchedFile) {
+          const fileUrl = await uploadFileToS3(matchedFile);
+          unit.fileUrl = fileUrl;
+        } else {
+          unit.fileUrl = null;
+        }
+
+        delete unit.fileFieldName; // xóa key tạm
+      }
+    }
+
+    const newCourse = await Course.create({
+      course_name: courseName,
+      course_instr: instructor,
+      price: originalPrice,
+      price_dis: discountedPrice,
+      language,
+      thumbnail: thumbnailUrl,
+      lectures,
+    });
+    return newCourse;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   getCourse,
   getCourseById,
@@ -299,4 +348,5 @@ module.exports = {
   getRegisteredClass,
   getCourseUnit,
   getUnitContent,
+  createCourse,
 };

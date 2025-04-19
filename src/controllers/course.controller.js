@@ -99,6 +99,15 @@ const getUnitContent = async (req, res) => {
     res.status(500).json({ err });
   }
 };
+
+const createCourse = async (req, res) => {
+  try {
+    const newCourse = await courseService.createCourse(req);
+    res.status(200).json(newCourse);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   getCourse,
   getCourseById,
@@ -107,4 +116,5 @@ module.exports = {
   getRegisteredClass,
   getCourseUnit,
   getUnitContent,
+  createCourse,
 };

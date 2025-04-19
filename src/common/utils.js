@@ -179,7 +179,7 @@ const getIntegerNumber = (num) => {
 };
 
 const uploadFileToS3 = async (req) => {
-  const file = req.file;
+  const file = req.file || req;
   const params = {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
     Key: Date.now() + "-" + file.originalname,

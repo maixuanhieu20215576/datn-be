@@ -39,18 +39,18 @@ const CourseSchema = mongoose.Schema(
     thumbnail: {
       type: String,
     },
-    units: [
+    lectures: [
       {
-        unitName: {
+        name: {
           type: String,
         },
-        unitContent: [
+        units: [
           {
-            childUnitName: String,
-            unitOverview: {
+            title: String,
+            overview: {
               type: String,
             },
-            unitLecture: {
+            fileUrl: {
               type: String,
             },
           },
