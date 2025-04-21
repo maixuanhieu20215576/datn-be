@@ -5,7 +5,6 @@ const NotificationSchema = mongoose.Schema(
   {
     sourceUserId: {
       type: mongoose.Types.ObjectId,
-      required: true,
       ref: "User",
     },
     targetUser: [

@@ -129,33 +129,35 @@ const postComment = async ({
   teacherId,
   teacherProfile,
   classId,
+  courseId,
+  replyTo,
 }) => {
   try {
-    const appliedClasses = await learningProcessModel.find({
-      userId: new mongoose.Types.ObjectId(userId),
-      teacherId,
-    });
-    const teacherClassIds = _.map(
-      teacherProfile.teachingClass,
-      (item) => item.classId
-    );
-    const orderSessions = await orderSessionModel.find({
-      userId,
-      classId: { $in: classId ? [classId] : teacherClassIds },
-      status: constants.paymentStatus.success,
-    });
-
-    if (appliedClasses.length === 0 && orderSessions.length === 0) {
-      throw new Error("Bạn chưa từng tham gia lớp hoc nào của giáo viên này");
-    }
-    const comment = await Comment.create({
-      userId: new mongoose.Types.ObjectId(userId),
-      content,
-      rating,
-      teacherId: new mongoose.Types.ObjectId(teacherId),
-    });
-
     if (classId) {
+      const appliedClasses = await learningProcessModel.find({
+        userId: new mongoose.Types.ObjectId(userId),
+        teacherId,
+      });
+      const teacherClassIds = _.map(
+        teacherProfile.teachingClass,
+        (item) => item.classId
+      );
+      const orderSessions = await orderSessionModel.find({
+        userId,
+        classId: { $in: classId ? [classId] : teacherClassIds },
+        status: constants.paymentStatus.success,
+      });
+
+      if (appliedClasses.length === 0 && orderSessions.length === 0) {
+        throw new Error("Bạn chưa từng tham gia lớp hoc nào của giáo viên này");
+      }
+      const comment = await Comment.create({
+        userId: new mongoose.Types.ObjectId(userId),
+        content,
+        rating,
+        teacherId: new mongoose.Types.ObjectId(teacherId),
+      });
+
       const commentsOfClass = await Comment.find({
         classId,
       });
@@ -169,8 +171,50 @@ const postComment = async ({
       await classModel.findByIdAndUpdate(classId, {
         rating: averageRating,
       });
+      return comment;
     }
-    return comment;
+    if (courseId) {
+      if (!replyTo) {
+        await Comment.create({
+          userId: new mongoose.Types.ObjectId(userId),
+          content,
+          courseId,
+          isRootComment: true,
+        });
+      } else {
+        const newReplyComment = await Comment.create({
+          userId: new mongoose.Types.ObjectId(userId),
+          content,
+          courseId,
+          isRootComment: false,
+          mentionUserId: replyTo.mentionUserId,
+          mentionUserName: replyTo.mentionUserName,
+        });
+
+        await Comment.findByIdAndUpdate(
+          replyTo.commentId,
+          {
+            $push: {
+              replyComments: newReplyComment._id,
+            },
+          },
+          {
+            upsert: true,
+          }
+        );
+        await createNotification({
+          content: "Bạn có câu trả lời bình luận mới",
+          title: content,
+          sourceUserId: new mongoose.Types.ObjectId(userId),
+          targetUser: [
+            {
+              targetUserId: replyTo.mentionUserId,
+              status: constants.notificationStatus.new,
+            },
+          ],
+        });
+      }
+    }
   } catch (err) {
     throw new Error(err);
   }
@@ -313,7 +357,7 @@ const _getTimeString = (num) => {
   if (num < 60000) return "Vừa xong";
   if (num < 60 * 60000) return `${parseInt(num / 60000)} phút trước`;
   if (num < 24 * 60 * 60000) return `${parseInt(num / (60000 * 60))} giờ trước`;
-  return  `${parseInt(num / (60000 * 60 * 24))} ngày trước`
+  return `${parseInt(num / (60000 * 60 * 24))} ngày trước`;
 };
 
 const fetchChatHistory = async ({ userId }) => {
@@ -337,7 +381,7 @@ const fetchChatHistory = async ({ userId }) => {
           chats.push({
             name: message.receiverId.fullName,
             avatar: message.receiverId.avatar,
-            time: _getTimeString((Date.now() - message.createdAt.getTime())),
+            time: _getTimeString(Date.now() - message.createdAt.getTime()),
             opponentId: _.toString(message.receiverId._id),
           });
           existedUser.push(String(message.receiverId._id));

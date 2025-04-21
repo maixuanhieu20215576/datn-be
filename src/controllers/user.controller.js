@@ -95,8 +95,19 @@ const getTeachingApplication = async (req, res) => {
 
 const postComment = async (req, res) => {
   try {
-    const { content, rating, teacherId, userId, teacherProfile, classId } =
-      req.body;
+    const {
+      content,
+      rating,
+      teacherId,
+      userId,
+      teacherProfile,
+      classId,
+      mentionUserName,
+      mentionUserId,
+      courseId,
+      isRootComment,
+      replyTo,
+    } = req.body;
     const newComment = await userService.postComment({
       teacherProfile,
       content,
@@ -104,6 +115,11 @@ const postComment = async (req, res) => {
       teacherId,
       userId,
       classId,
+      mentionUserName,
+      mentionUserId,
+      courseId,
+      isRootComment,
+      replyTo,
     });
     res.status(200).json(newComment);
   } catch (err) {

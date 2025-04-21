@@ -6,12 +6,13 @@ const OrderSession = require("../models/orderSession.model");
 const { constants } = require("../constant");
 const classModel = require("../models/class.model");
 const learningProcessModel = require("../models/learningProcess.model");
+const Comment = require("../models/comment.model");
 const mongoose = require("mongoose");
 const _convertTimeToMilisecond = (time) => {
   const [hours, minutes] = time.split(":").map(Number);
   return (hours * 60 + minutes) * 60 * 1000;
 };
-const { uploadFileToS3 } = require("../common/utils");
+const { uploadFileToS3, createNotification } = require("../common/utils");
 const getCourse = async (requestBody) => {
   const {
     language,
@@ -191,10 +192,20 @@ const getRegisteredClass = async ({ userId }) => {
   }
 };
 
-const getCourseUnit = async ({ courseId }) => {
+const getCourseUnit = async ({ courseId, userId }) => {
   try {
     const courseDetail = await Course.findById(courseId);
-    return courseDetail;
+    const courseLearningProcess = await learningProcessModel.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      courseId,
+    });
+
+    const learningProcess = _.get(
+      courseLearningProcess,
+      "courseLearningProcess",
+      []
+    );
+    return { courseDetail, learningProcess };
   } catch (err) {
     throw new Error(err);
   }
@@ -239,7 +250,7 @@ const getUnitContent = async ({ courseId, lectureId, userId }) => {
             unitContentObj.lectureType = "mp4";
           }
 
-          let nextLectureId = '';
+          let nextLectureId = "";
           if (unitIndex + 1 < lecture.units.length) {
             nextLectureId = _.toString(lecture.units[unitIndex + 1]._id);
           } else if (lectureIndex + 1 < courseDetail.lectures.length) {
@@ -249,7 +260,7 @@ const getUnitContent = async ({ courseId, lectureId, userId }) => {
             }
           }
 
-          let lastLectureId = '';
+          let lastLectureId = "";
           if (unitIndex - 1 >= 0) {
             lastLectureId = _.toString(lecture.units[unitIndex - 1]._id);
           } else if (lectureIndex - 1 >= 0) {
@@ -266,7 +277,6 @@ const getUnitContent = async ({ courseId, lectureId, userId }) => {
           });
 
           const status = _getUnitLearningStatus(learningProcess, lectureId);
-
           return {
             lectureContent: unitContentObj,
             parentUnit: lecture.name,
@@ -339,6 +349,101 @@ const createCourse = async (req) => {
     throw new Error(err);
   }
 };
+
+const updateCourseLearningProcessStatus = async ({
+  userId,
+  courseId,
+  unitId,
+  status,
+}) => {
+  try {
+    await learningProcessModel.updateOne(
+      { userId: new mongoose.Types.ObjectId(userId), courseId },
+      {
+        $push: {
+          courseLearningProcess: { unitId, status },
+        },
+      },
+      { upsert: true }
+    );
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const getCourseDiscussion = async ({ courseId, page = 1, itemPerPage = 5 }) => {
+  try {
+    const result = await Comment.paginate(
+      { courseId, isRootComment: true }, // chỉ lấy comment gốc
+      {
+        page,
+        limit: itemPerPage,
+        sort: { createdAt: -1 },
+        populate: [
+          {
+            path: "userId",
+            select: "fullName avatar",
+          },
+          {
+            path: "replyComments",
+            populate: {
+              path: "userId",
+              select: "fullName avatar",
+            },
+          },
+        ],
+        lean: true,
+      }
+    );
+    return {
+      success: true,
+      comments: result.docs,
+      totalPages: result.totalPages,
+      totalItems: result.totalDocs,
+      currentPage: result.page,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+};
+
+const commentVote = async ({ commentId, type }) => {
+  try {
+    const comment = await Comment.findById(commentId).populate("userId");
+    if (type === constants.commentVoteType.upvote) {
+      await Comment.updateOne({ _id: commentId }, { $inc: { upvotes: 1 } });
+      await createNotification({
+        content: "Bình luận của bạn có lượt thích mới",
+        title: "",
+        targetUser: [
+          {
+            targetUserId: comment.userId._id,
+            status: constants.notificationStatus.new,
+          },
+        ],
+      });
+    }
+    if (type === constants.commentVoteType.downvote) {
+      await Comment.updateOne({ _id: commentId }, { $inc: { downvotes: 1 } });
+      await createNotification({
+        content: "Bình luận của bạn có lượt dislike",
+        title: "",
+        targetUser: [
+          {
+            targetUserId: comment.userId._id,
+            status: constants.notificationStatus.new,
+          },
+        ],
+      });
+    }
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 module.exports = {
   getCourse,
   getCourseById,
@@ -349,4 +454,7 @@ module.exports = {
   getCourseUnit,
   getUnitContent,
   createCourse,
+  updateCourseLearningProcessStatus,
+  getCourseDiscussion,
+  commentVote,
 };

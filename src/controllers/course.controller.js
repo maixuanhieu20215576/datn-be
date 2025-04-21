@@ -68,8 +68,8 @@ const getRegisteredClass = async (req, res) => {
 
 const getCourseUnit = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const result = await courseService.getCourseUnit({ courseId });
+    const { courseId, userId } = req.body;
+    const result = await courseService.getCourseUnit({ courseId, userId });
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ err });
@@ -108,6 +108,41 @@ const createCourse = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+const updateCourseLearningProcessStatus = async (req, res) => {
+  try {
+    const { userId, courseId, unitId, status } = req.body;
+    const result = await courseService.updateCourseLearningProcessStatus({
+      userId,
+      courseId,
+      unitId,
+      status,
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
+
+const getCourseDiscussion = async (req, res) => {
+  try {
+    const { courseId } = req.body;
+    const result = await courseService.getCourseDiscussion({ courseId });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
+
+const commentVote = async (req, res) => {
+  try {
+    const { commentId, type } = req.body;
+    const result = await courseService.commentVote({ commentId, type });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+};
 module.exports = {
   getCourse,
   getCourseById,
@@ -117,4 +152,7 @@ module.exports = {
   getCourseUnit,
   getUnitContent,
   createCourse,
+  updateCourseLearningProcessStatus,
+  getCourseDiscussion,
+  commentVote,
 };

@@ -87,6 +87,10 @@ const constants = {
     done: "done",
     undone: "undone",
   },
+  commentVoteType: {
+    upvote: "upvote",
+    downvote: "downvote",
+  }
 };
 
 module.exports = { constants };
