@@ -175,12 +175,15 @@ const postComment = async ({
     }
     if (courseId) {
       if (!replyTo) {
-        await Comment.create({
+        const newComment = await Comment.create({
           userId: new mongoose.Types.ObjectId(userId),
           content,
           courseId,
           isRootComment: true,
         });
+        await newComment.populate('userId');
+
+        return newComment;
       } else {
         const newReplyComment = await Comment.create({
           userId: new mongoose.Types.ObjectId(userId),
@@ -213,6 +216,9 @@ const postComment = async ({
             },
           ],
         });
+        await newReplyComment.populate('userId');
+
+        return newReplyComment;
       }
     }
   } catch (err) {

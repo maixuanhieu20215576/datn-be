@@ -126,8 +126,8 @@ const updateCourseLearningProcessStatus = async (req, res) => {
 
 const getCourseDiscussion = async (req, res) => {
   try {
-    const { courseId } = req.body;
-    const result = await courseService.getCourseDiscussion({ courseId });
+    const { courseId, itemPerPage, page } = req.body;
+    const result = await courseService.getCourseDiscussion({ courseId, itemPerPage, page });
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ err });
