@@ -535,9 +535,8 @@ const getVietQRPayment = async ({ teacherId, amount, month, year }) => {
       "bankPaymentInfo.bankAccountNumber"
     );
     const bankName = _.get(teacher, "bankPaymentInfo.bankName");
-
     const vietQrBank = await vietQRBank.findOne({
-      bankName: bankName,
+      $or: [{ bankName: bankName }, { shortName: bankName }],
     });
     const bankCode = _.get(vietQrBank, "bankCode");
     const vietQrPaymentUrl = `https://img.vietqr.io/image/${bankCode}-${bankAccountNumber}-compact2.png?amount=${amount}&addInfo=thanh%20toan%20luong%20thang%20${month}%20${year}`;

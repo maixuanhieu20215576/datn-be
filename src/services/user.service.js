@@ -400,7 +400,7 @@ const fetchChatHistory = async ({ userId }) => {
                 ? "Quản trị viên"
                 : message.senderId.fullName,
             avatar: message.senderId.avatar,
-            time: `${parseInt((Date.now() - message.createdAt.getTime()) / (1000 * 60))} phút`,
+            time: _getTimeString(Date.now() - message.createdAt.getTime()),
             opponentId: _.toString(message.senderId._id),
           });
           existedUser.push(String(message.senderId._id));
