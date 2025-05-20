@@ -39,6 +39,7 @@ const QuestionSchema = mongoose.Schema(
       type: String,
     },
     readingQuestionId: { type: mongoose.Schema.Types.ObjectId },
+    testId: String,
   },
   {
     timestamps: true,

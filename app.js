@@ -16,9 +16,10 @@ const oneTimeJobRoute = require("./src/routes/oneTimeJob.route");
 const courseRoute = require("./src/routes/course.route");
 const paymentRoute = require("./src/routes/payment.route");
 const ipnRoute = require("./src/routes/ipn.route");
-const s3Route = require('./src/routes/s3.route')
+const s3Route = require("./src/routes/s3.route");
 const teacherRoute = require("./src/routes/teacher.route");
 const Message = require("./src/models/message.model");
+const testRoute = require("./src/routes/test.route");
 const { getGoogleDriveFile } = require("./src/common/utils");
 
 app.use(helmet()); // Set security HTTP headers
@@ -34,7 +35,7 @@ app.use("/course", courseRoute);
 app.use("/payment", paymentRoute);
 app.use("/vnpay_ipn", ipnRoute);
 app.use("/teacher", teacherRoute);
-
+app.use("/test", testRoute);
 app.get("/api/proxy-pdf", getGoogleDriveFile);
 app.use("/s3", s3Route);
 // eslint-disable-next-line no-undef
