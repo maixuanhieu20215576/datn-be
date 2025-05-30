@@ -3,6 +3,7 @@ const express = require("express");
 const helmet = require("helmet");
 const xss = require("xss-clean");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const app = express();
 require("dotenv").config();
 const mongoose = require("mongoose");
@@ -27,15 +28,36 @@ app.use(xss()); // Sanitize request data
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    // eslint-disable-next-line no-undef
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = decoded;
+
+    next();
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
 app.use("/verify", verificationRoute);
-app.use("/user", userRoute);
-app.use("/admin", adminRoute);
+app.use("/user", authMiddleware, userRoute);
+app.use("/admin", authMiddleware, adminRoute);
 app.use("/one-time-job", oneTimeJobRoute);
-app.use("/course", courseRoute);
+app.use("/course", authMiddleware, courseRoute);
 app.use("/payment", paymentRoute);
 app.use("/vnpay_ipn", ipnRoute);
-app.use("/teacher", teacherRoute);
-app.use("/test", testRoute);
+app.use("/teacher", authMiddleware, teacherRoute);
+app.use("/test", authMiddleware, testRoute);
 app.get("/api/proxy-pdf", getGoogleDriveFile);
 app.use("/s3", s3Route);
 // eslint-disable-next-line no-undef
