@@ -15,7 +15,7 @@ router.post(
   oneTimeJobController.createFileTestS3
 );
 
-router.post('/health-check', (req, res) => {
+router.get('/health-check', (req, res) => {
   res.status(200).json({ message: "Server is healthy" });
 });
 
