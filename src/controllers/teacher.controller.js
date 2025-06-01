@@ -58,9 +58,20 @@ const getTeacherComments = async (req, res) => {
   }
 };
 
+const getClassesByTeacher = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const classes = await teacherService.getClassesByTeacher({ teacherId });
+    res.status(200).json(classes);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 module.exports = {
   getTeachingStatistics,
   getTeachingStatisticsByClass,
   getTeacherProfile,
+  getClassesByTeacher,
   getTeacherComments,
 };

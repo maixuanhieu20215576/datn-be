@@ -232,9 +232,22 @@ const getTeacherComments = async ({ teacherId, page, limit }) => {
   }
 };
 
+const getClassesByTeacher = async ({ teacherId }) => {
+  try {
+    const classes = await classModel
+      .find({
+        teacherId,
+      })
+      .select("className classId language currentStudent thumbnail");
+    return classes;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   getTeachingStatistics,
   getTeachingStatisticsByClass,
   getTeacherProfile,
   getTeacherComments,
+  getClassesByTeacher,
 };
