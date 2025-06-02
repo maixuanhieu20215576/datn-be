@@ -1,5 +1,7 @@
 const _ = require("lodash");
 const classModel = require("../models/class.model");
+const QuestionModel = require("../models/question.model");
+const TestModel = require("../models/test.model");
 const orderSessionModel = require("../models/orderSession.model");
 const { constants } = require("../constant");
 const learningProcessModel = require("../models/learningProcess.model");
@@ -238,8 +240,108 @@ const getClassesByTeacher = async ({ teacherId }) => {
       .find({
         teacherId,
       })
-      .select("className classId language currentStudent thumbnail");
-    return classes;
+      .select("className _id language currentStudent thumbnail schedule")
+      .sort({ _id: -1 });
+
+    for (const classItem of classes) {
+      let canJoinClass = false;
+      let followingClassTime = null;
+      let classIsEnded = true;
+      for (const scheduleItem of classItem.schedule) {
+        if (canJoinClass) {
+          break;
+        }
+        followingClassTime = moment(
+          `${scheduleItem.date} ${scheduleItem.timeFrom}`,
+          "DD/MM/YYYY HH:mm"
+        );
+        classIsEnded = followingClassTime.isAfter(moment());
+
+        canJoinClass =
+          classIsEnded &&
+          followingClassTime.isBefore(moment().add(15, "minutes"));
+      }
+      classItem.canJoinClass = canJoinClass;
+      classItem.followingClassTime =
+        followingClassTime.format("DD/MM/YYYY HH:mm");
+      classItem.classIsEnded = classIsEnded;
+    }
+
+    return _.map(classes, (classItem) => ({
+      _id: classItem._id,
+      className: classItem.className,
+      language: classItem.language,
+      currentStudent: classItem.currentStudent,
+      thumbnail: classItem.thumbnail,
+      canJoinClass: classItem.canJoinClass,
+      followingClassTime: classItem.followingClassTime,
+      classIsEnded: classItem.classIsEnded,
+    }));
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+const createTest = async ({
+  testName,
+  timeLimit,
+  questions,
+  examDate,
+  examTime,
+  classId,
+}) => {
+  const newTest = await TestModel.create({
+    name: testName,
+    numberOfQuestions: questions.length,
+    timeLimitByMinutes: timeLimit,
+    examDate: moment(examDate, "DD/MM/YYYY").toDate(),
+    examTime,
+    classId,
+  });
+
+  const testId = newTest._id.toString();
+
+  const newQuestions = questions.map((question) => {
+    const choice = question.choices; // lưu ý đúng trường
+    return {
+      question: question.question,
+      choice_1: choice[0],
+      choice_2: choice[1],
+      choice_3: choice[2],
+      choice_4: choice[3],
+      answer: question.correctAnswer,
+      testId,
+    };
+  });
+
+  await QuestionModel.insertMany(newQuestions);
+};
+
+const getStudentsByClass = async ({ teacherId }) => {
+  try {
+    let classStudentInfos = [];
+    const classDetail = await classModel.find({ teacherId });
+    for (const classItem of classDetail) {
+      let classStudentInfoItem = {};
+      classStudentInfoItem.classId = _.toString(_.get(classItem, "_id"));
+      classStudentInfoItem.className = _.get(classItem, "className");
+
+      const learningProcesses = await learningProcessModel
+        .find({ classId: classItem._id })
+        .populate("userId")
+        .select("_id fullName email phoneNumber");
+
+      classStudentInfoItem.students = learningProcesses.map((lp) => ({
+        studentId: lp.userId._id,
+        fullName: lp.userId.fullName,
+        email: lp.userId.email,
+        phoneNumber: lp.userId.phoneNumber,
+      }));
+
+      classStudentInfos.push(classStudentInfoItem);
+    }
+
+    return classStudentInfos;
   } catch (err) {
     throw new Error(err);
   }
@@ -250,4 +352,6 @@ module.exports = {
   getTeacherProfile,
   getTeacherComments,
   getClassesByTeacher,
+  createTest,
+  getStudentsByClass,
 };

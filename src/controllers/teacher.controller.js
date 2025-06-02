@@ -68,10 +68,39 @@ const getClassesByTeacher = async (req, res) => {
   }
 };
 
+const createTest = async (req, res) => {
+  try {
+    const { testName, timeLimit, questions, examDate, examTime, classId } =
+      req.body;
+    await teacherService.createTest({
+      testName,
+      timeLimit,
+      questions,
+      examDate,
+      examTime,
+      classId,
+    });
+    res.status(200).json("Create test successfully");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const getStudentsByClass = async (req, res) => {
+  try {
+    const { teacherId } = req.body;
+    const classStudentInfos = await teacherService.getStudentsByClass({ teacherId });
+    res.status(200).json(classStudentInfos);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
+  getStudentsByClass,
   getTeachingStatistics,
   getTeachingStatisticsByClass,
   getTeacherProfile,
   getClassesByTeacher,
   getTeacherComments,
+  createTest,
 };

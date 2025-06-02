@@ -5,7 +5,7 @@ const TestResult = require("../models/testResult.model");
 
 const getTests = async ({ language }) => {
   if (!language) {
-    const tests = await Test.find({});
+    const tests = await Test.find({ classId: { $exists: false } });
     return tests;
   } else {
     const tests = await Test.find({

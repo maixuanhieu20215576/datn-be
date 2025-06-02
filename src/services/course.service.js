@@ -1,5 +1,7 @@
 const moment = require("moment");
 const _ = require("lodash");
+const TestResult = require("../models/testResult.model");
+const TestModel = require("../models/test.model");
 const Course = require("../models/course.model");
 const Class = require("../models/class.model");
 const OrderSession = require("../models/orderSession.model");
@@ -143,14 +145,14 @@ const getRegisteredClass = async ({ userId }) => {
       {
         classId: 1,
       }
-    );
+    ).sort({ createdAt: -1 });
     const classes = [];
     for (const orderSession of orderSessions) {
       const classId = _.get(orderSession, "classId");
       if (classId) {
         const classDetail = await classModel.findById(classId);
         let timeString;
-        let canJoinClass;
+        let canJoinClass = false;
         for (const schedule of classDetail.schedule) {
           const dateMoment = `${schedule.date} ${schedule.timeFrom}`;
           if (
@@ -163,7 +165,7 @@ const getRegisteredClass = async ({ userId }) => {
           const followingClassTimeInMiliseconds =
             moment(dateMoment, "DD/MM/YYYY HH:mm").valueOf() - Date.now();
           canJoinClass =
-            followingClassTimeInMiliseconds < 15 * 60 * 1000 * 1000;
+            canJoinClass || followingClassTimeInMiliseconds < 15 * 60 * 1000;
 
           const duration = moment.duration(followingClassTimeInMiliseconds);
           const days = Math.floor(duration.asDays());
@@ -172,6 +174,18 @@ const getRegisteredClass = async ({ userId }) => {
 
           timeString = `${days} ngày ${hours} giờ ${minutes} phút`;
           break;
+        }
+
+        let incomingTest = await TestModel.findOne({
+          classId: classDetail._id,
+        }).select("name _id examDate examTime");
+        let testResult = null;
+        if (incomingTest) {
+          testResult = await TestResult.findOne({
+            userId,
+            testId: incomingTest._id,
+          });
+          incomingTest = { ...incomingTest, isDoneTest: !!testResult };
         }
         classes.push({
           _id: classDetail._id,
@@ -183,9 +197,11 @@ const getRegisteredClass = async ({ userId }) => {
           thumbnail: classDetail.thumbnail,
           followingClassTime: timeString,
           canJoinClass,
+          incomingTest: incomingTest || "",
         });
       }
     }
+
     return classes;
   } catch (err) {
     throw new Error(err);

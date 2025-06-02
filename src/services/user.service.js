@@ -12,6 +12,8 @@ const vietQrBanks = require("../models/vietQr.model");
 const Notification = require("../models/notification.model");
 const { createNotification } = require("../common/utils");
 const Message = require("../models/message.model");
+const testResultModel = require("../models/testResult.model");
+const testModel = require("../models/test.model");
 
 const getUserInfo = async (userId) => {
   const user = await User.findById(userId);
@@ -181,7 +183,7 @@ const postComment = async ({
           courseId,
           isRootComment: true,
         });
-        await newComment.populate('userId');
+        await newComment.populate("userId");
 
         return newComment;
       } else {
@@ -216,7 +218,7 @@ const postComment = async ({
             },
           ],
         });
-        await newReplyComment.populate('userId');
+        await newReplyComment.populate("userId");
 
         return newReplyComment;
       }
@@ -432,6 +434,53 @@ const loadMessageHistory = async ({ userId, opponentId }) => {
     throw new Error(err);
   }
 };
+
+const getClassHistory = async ({ userId, classId }) => {
+  try {
+    let classHistory = {};
+    const learningProcess = await learningProcessModel
+      .findOne({
+        userId,
+        classId,
+      })
+      .populate("attendanceHistory");
+    if (!learningProcess) {
+      throw new Error("Không tìm thấy lịch sử lớp học");
+    }
+
+    const classDetail = await classModel.findById(classId);
+    const heldClasses = classDetail.schedule.filter((item) =>
+      moment(item.date, "DD/MM/YYYY").isBefore(moment(Date.now(), "DD/MM/YYYY"))
+    );
+    classHistory.totalSessions = _.size(heldClasses);
+    classHistory.attendedSessions = learningProcess
+      ? _.size(learningProcess.attendanceHistory)
+      : 0;
+
+    const tests = await testModel.find({ classId });
+
+    const testIds = _.map(tests, (test) => test._id);
+    const testResult = await testResultModel
+      .find({
+        userId,
+        testId: { $in: testIds },
+      })
+      .populate("testId")
+      .select("grade testId _id createdAt");
+
+    classHistory.testResults = testResult.map((item) => ({
+      id: item._id,
+      score: item.grade,
+      testId: item.testId._id,
+      name: item.testId.name,
+      date: moment(item.createdAt).format("HH:mm DD/MM/YYYY"),
+      maxScore: item.testId.maxGrade,
+    }));
+    return classHistory;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -445,4 +494,5 @@ module.exports = {
   markAllAsRead,
   fetchChatHistory,
   loadMessageHistory,
+  getClassHistory,
 };

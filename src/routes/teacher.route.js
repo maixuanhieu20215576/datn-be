@@ -7,4 +7,6 @@ router.get('/statistics-by-class/:teacherId', teacherController.getTeachingStati
 router.get('/profile/:teacherId', teacherController.getTeacherProfile);
 router.get('/comments/:teacherId', teacherController.getTeacherComments);
 router.get('/get-classes/:teacherId', teacherController.getClassesByTeacher);
+router.post('/create-test', teacherController.createTest);
+router.post('/get-students-by-class', teacherController.getStudentsByClass);
 module.exports = router;

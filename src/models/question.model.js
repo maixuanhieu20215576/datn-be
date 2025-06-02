@@ -23,7 +23,7 @@ const QuestionSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    correctAnswer: {
+    answer: {
       type: Number,
       required: true,
     },

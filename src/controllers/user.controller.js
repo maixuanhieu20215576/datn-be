@@ -237,6 +237,15 @@ const uploadFile = async (req, res) => {
   }
 };
 
+const getClassHistory = async (req, res) => {
+  try {
+    const { classId, userId } = req.body;
+    const classHistory = await userService.getClassHistory({ classId, userId });
+    res.status(200).json(classHistory);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
 module.exports = {
   getUserInfo,
   updateUserInfo,
@@ -252,4 +261,5 @@ module.exports = {
   loadMessageHistory,
   chatWithGpt,
   uploadFile,
+  getClassHistory,
 };

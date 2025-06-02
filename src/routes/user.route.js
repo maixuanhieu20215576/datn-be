@@ -21,5 +21,6 @@ router.get("/fetch-chat-history/:userId", userController.fetchChatHistory);
 router.post("/load-message-history", userController.loadMessageHistory);
 router.post("/chat-with-gpt", userController.chatWithGpt);
 router.post("/upload-file", upload.single("file"), userController.uploadFile);
+router.post('/get-class-history', userController.getClassHistory);
 router.get("/:userId", userController.getUserInfo);
 module.exports = router;

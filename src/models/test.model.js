@@ -16,12 +16,23 @@ const TestSchema = mongoose.Schema(
     },
     maxGrade: {
       type: Number,
+      default: 100,
     },
     timeLimitByMinutes: {
       type: Number,
     },
     thumbnail: {
       type: String,
+    },
+    examDate: {
+      type: Date,
+    },
+    examTime: {
+      type: String,
+    },
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
     },
   },
   {
