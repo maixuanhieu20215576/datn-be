@@ -240,7 +240,9 @@ const getClassesByTeacher = async ({ teacherId }) => {
       .find({
         teacherId,
       })
-      .select("className _id language currentStudent thumbnail schedule classUrl")
+      .select(
+        "className _id language currentStudent thumbnail schedule classUrl"
+      )
       .sort({ _id: -1 });
 
     for (const classItem of classes) {
@@ -255,15 +257,21 @@ const getClassesByTeacher = async ({ teacherId }) => {
           `${scheduleItem.date} ${scheduleItem.timeFrom}`,
           "DD/MM/YYYY HH:mm"
         );
-        classIsEnded = followingClassTime.isAfter(moment().tz("Asia/Ho_Chi_Minh"));
+        classIsEnded = followingClassTime.isAfter(
+          moment().tz("Asia/Ho_Chi_Minh")
+        );
 
         canJoinClass =
           classIsEnded &&
-          followingClassTime.isBefore(moment().add(15, "minutes").tz("Asia/Ho_Chi_Minh"));
+          followingClassTime.isBefore(
+            moment().tz("Asia/Ho_Chi_Minh").add(15, "minutes")
+          );
       }
       classItem.canJoinClass = canJoinClass;
-      classItem.followingClassTime =
-        followingClassTime.format("DD/MM/YYYY HH:mm").tz("Asia/Ho_Chi_Minh");
+      classItem.followingClassTime = followingClassTime
+        .tz("Asia/Ho_Chi_Minh")
+        .format("DD/MM/YYYY HH:mm");
+
       classItem.classIsEnded = classIsEnded;
     }
 
