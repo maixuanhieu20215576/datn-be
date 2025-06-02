@@ -178,7 +178,9 @@ const getRegisteredClass = async ({ userId }) => {
 
         let incomingTest = await TestModel.findOne({
           classId: classDetail._id,
-        }).select("name _id examDate examTime");
+        })
+          .select("name _id examDate examTime")
+          .lean();
         let testResult = null;
         if (incomingTest) {
           testResult = await TestResult.findOne({

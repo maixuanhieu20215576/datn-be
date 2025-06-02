@@ -250,27 +250,26 @@ const getClassesByTeacher = async ({ teacherId }) => {
       let followingClassTime = null;
       let classIsEnded = true;
       for (const scheduleItem of classItem.schedule) {
-        if (canJoinClass) {
-          break;
-        }
         followingClassTime = moment(
           `${scheduleItem.date} ${scheduleItem.timeFrom}`,
           "DD/MM/YYYY HH:mm"
-        );
-        classIsEnded = followingClassTime.isAfter(
-          moment().tz("Asia/Ho_Chi_Minh")
-        );
+        ); // giờ GMT + 7
 
-        canJoinClass =
-          classIsEnded &&
-          followingClassTime.isBefore(
-            moment().tz("Asia/Ho_Chi_Minh").add(15, "minutes")
-          );
+        if (followingClassTime.isAfter(moment().utc().add(7, "hours"))) {
+          classIsEnded = false;
+          if (
+            followingClassTime.isBefore(
+              moment().utc().add(7, "hours").add(15, "minutes")
+            )
+          ) {
+            canJoinClass = true;
+          }
+          break;
+        }
       }
       classItem.canJoinClass = canJoinClass;
-      classItem.followingClassTime = followingClassTime
-        .tz("Asia/Ho_Chi_Minh")
-        .format("DD/MM/YYYY HH:mm");
+      classItem.followingClassTime =
+        followingClassTime.format("DD/MM/YYYY HH:mm");
 
       classItem.classIsEnded = classIsEnded;
     }
