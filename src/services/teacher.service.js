@@ -297,14 +297,16 @@ const createTest = async ({
   examDate,
   examTime,
   classId,
+  maxGrade,
 }) => {
   const newTest = await TestModel.create({
     name: testName,
     numberOfQuestions: questions.length,
     timeLimitByMinutes: timeLimit,
-    examDate: moment(examDate, "DD/MM/YYYY").toDate(),
+    examDate: examDate ? moment(examDate, "DD/MM/YYYY").toDate() : '',
     examTime,
     classId,
+    maxGrade,
   });
 
   const testId = newTest._id.toString();

@@ -23,6 +23,8 @@ const TestSchema = mongoose.Schema(
     },
     thumbnail: {
       type: String,
+      default:
+        "https://data.lvo.vn/media/upload/1002364/test-intelligenza-sociale.jpg",
     },
     examDate: {
       type: Date,

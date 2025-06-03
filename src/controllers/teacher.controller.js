@@ -70,8 +70,15 @@ const getClassesByTeacher = async (req, res) => {
 
 const createTest = async (req, res) => {
   try {
-    const { testName, timeLimit, questions, examDate, examTime, classId } =
-      req.body;
+    const {
+      testName,
+      timeLimit,
+      questions,
+      examDate,
+      examTime,
+      classId,
+      maxGrade,
+    } = req.body;
     await teacherService.createTest({
       testName,
       timeLimit,
@@ -79,6 +86,7 @@ const createTest = async (req, res) => {
       examDate,
       examTime,
       classId,
+      maxGrade,
     });
     res.status(200).json("Create test successfully");
   } catch (err) {
@@ -89,7 +97,9 @@ const createTest = async (req, res) => {
 const getStudentsByClass = async (req, res) => {
   try {
     const { teacherId } = req.body;
-    const classStudentInfos = await teacherService.getStudentsByClass({ teacherId });
+    const classStudentInfos = await teacherService.getStudentsByClass({
+      teacherId,
+    });
     res.status(200).json(classStudentInfos);
   } catch (err) {
     res.status(500).json(err);
