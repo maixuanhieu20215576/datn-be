@@ -16,6 +16,7 @@ const fetchApplicationForms = async ({
   itemPerPage,
   filterStatus,
   userId,
+  username,
 }) => {
   let filter = {};
   if (filterStatus !== constants.applicationStatus.all) {
@@ -24,13 +25,18 @@ const fetchApplicationForms = async ({
   if (userId) {
     filter = { ...filter, userId: userId };
   }
+  if (username) {
+    const regex = new RegExp(username, "i");
 
+    filter = { ...filter, fullName: regex };
+  }
   const applicationForms = await ApplicationForm.find(filter)
     .sort({ createdAt: -1 }) // -1: Giảm dần (mới nhất trước), 1: Tăng dần (cũ nhất trước)
     .skip((page - 1) * itemPerPage)
     .limit(itemPerPage);
+  const totalDocuments = await ApplicationForm.countDocuments(filter);
 
-  return applicationForms;
+  return { applicationForms, totalDocuments };
 };
 
 const updateApplicationFormStatus = async ({
