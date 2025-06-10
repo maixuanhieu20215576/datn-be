@@ -290,7 +290,7 @@ const fetchClass = async ({ searchValue, page }) => {
     })
       .skip((page - 1) * 18)
       .limit(18)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
 
     const totalClasses = await Class.countDocuments({
       stringForSearch: { $regex: filter },
