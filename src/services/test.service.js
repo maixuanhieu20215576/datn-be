@@ -156,10 +156,14 @@ const getTestResult = async ({ testResultId }) => {
 };
 
 const getTestHistory = async ({ userId, testId }) => {
-  const testResults = await TestResult.find({ userId, testId })
+  const testResults = await TestResult.find({
+    userId,
+    testId,
+    grade: { $exists: true },
+  })
     .populate("testId")
     .sort({ createdAt: -1 })
-    .select('testId startIsoDate createdAt grade');
+    .select("testId startIsoDate createdAt grade");
   return testResults;
 };
 module.exports = {
