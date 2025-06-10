@@ -127,7 +127,11 @@ const updateCourseLearningProcessStatus = async (req, res) => {
 const getCourseDiscussion = async (req, res) => {
   try {
     const { courseId, itemPerPage, page } = req.body;
-    const result = await courseService.getCourseDiscussion({ courseId, itemPerPage, page });
+    const result = await courseService.getCourseDiscussion({
+      courseId,
+      itemPerPage,
+      page,
+    });
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ err });
@@ -143,6 +147,16 @@ const commentVote = async (req, res) => {
     res.status(500).json({ err });
   }
 };
+
+const editCourse = async (req, res) => {
+  try {
+    const newCourse = await courseService.editCourse(req);
+    res.status(200).json(newCourse);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 module.exports = {
   getCourse,
   getCourseById,
@@ -155,4 +169,5 @@ module.exports = {
   updateCourseLearningProcessStatus,
   getCourseDiscussion,
   commentVote,
+  editCourse,
 };

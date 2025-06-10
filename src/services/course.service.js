@@ -61,11 +61,11 @@ const getCourse = async (requestBody) => {
   if (searchText) {
     filter.course_name = new RegExp(searchText, "i");
   }
-  let sortKey = { createAt: -1, _id: 1 };
+  let sortKey = { createdAt: -1 };
 
   if (sortOption) {
     if (sortOption === "0") {
-      sortKey = { createAt: -1, _id: 1 };
+      sortKey = { createdAt: -1 };
     }
     if (sortOption === "1") {
       sortKey = { course_rating: -1, _id: 1 };
@@ -462,6 +462,38 @@ const commentVote = async ({ commentId, type }) => {
   }
 };
 
+const editCourse = async (req) => {
+  const { courseId, unitId, overview } = req.body;
+
+  const fileInput = req.file;
+
+  const course = await Course.findById(courseId);
+
+  if (!course) {
+    throw new Error("Course not found");
+  }
+  let unitResponse;
+
+  for (const lecture of course.lectures) {
+    const unit = lecture.units.find(
+      (unit) => unit._id.toString() === unitId.toString()
+    );
+
+    if (unit) {
+      unit.overview = overview || unit.overview;
+      if (fileInput) {
+        const newFileUrl = await uploadFileToS3(req);
+        unit.fileUrl = newFileUrl;
+      }
+      unitResponse = unit;
+      break;
+    }
+  }
+
+  await course.save();
+  return unitResponse;
+};
+
 module.exports = {
   getCourse,
   getCourseById,
@@ -475,4 +507,5 @@ module.exports = {
   updateCourseLearningProcessStatus,
   getCourseDiscussion,
   commentVote,
+  editCourse,
 };
