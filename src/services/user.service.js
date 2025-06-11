@@ -450,7 +450,7 @@ const getClassHistory = async ({ userId, classId }) => {
 
     const classDetail = await classModel.findById(classId);
     const heldClasses = classDetail.schedule.filter((item) =>
-      moment(item.date, "DD/MM/YYYY").isBefore(moment(Date.now(), "DD/MM/YYYY"))
+      moment(item.date, "DD/MM/YYYY").isBefore(moment(), "day")
     );
     classHistory.totalSessions = _.size(heldClasses);
     classHistory.attendedSessions = learningProcess
