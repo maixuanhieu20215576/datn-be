@@ -2,11 +2,10 @@
 const bcrypt = require("bcrypt");
 
 const User = require("../models/user.model");
-const { Message } = require("../models/message.model");
+const Message = require("../models/message.model");
 const mongoose = require("mongoose");
 const { generateAuthTokens } = require("./auth.service");
 require("dotenv").config();
-
 
 const login = async ({ username, password }) => {
   try {
