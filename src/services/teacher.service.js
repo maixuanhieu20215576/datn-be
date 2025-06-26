@@ -9,7 +9,6 @@ const teachingHistoryModel = require("../models/teachingHistory.model");
 const User = require("../models/user.model");
 const moment = require("moment");
 const ApplicationForm = require("../models/applicationForm.model");
-const { default: mongoose } = require("mongoose");
 const Comment = require("../models/comment.model");
 
 const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
@@ -205,7 +204,7 @@ const getTeacherProfile = async (teacherId) => {
 const getTeacherComments = async ({ teacherId, page, limit }) => {
   try {
     const teacherComments = await Comment.find({
-      teacherId: new mongoose.Types.ObjectId(teacherId),
+      teacherId,
     })
       .populate("userId", "fullName avatar")
       .sort({ createdAt: -1 })
@@ -213,7 +212,7 @@ const getTeacherComments = async ({ teacherId, page, limit }) => {
       .limit(limit);
 
     const totalComments = await Comment.countDocuments({
-      teacherId: new mongoose.Types.ObjectId(teacherId),
+      teacherId,
     });
 
     const totalPages = Math.ceil(totalComments / limit);
@@ -303,7 +302,7 @@ const createTest = async ({
     name: testName,
     numberOfQuestions: questions.length,
     timeLimitByMinutes: timeLimit,
-    examDate: examDate ? moment(examDate, "DD/MM/YYYY").toDate() : '',
+    examDate: examDate ? moment(examDate, "DD/MM/YYYY").toDate() : "",
     examTime,
     classId,
     maxGrade,

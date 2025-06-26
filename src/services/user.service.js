@@ -137,7 +137,7 @@ const postComment = async ({
   try {
     if (classId) {
       const appliedClasses = await learningProcessModel.find({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId,
         teacherId,
       });
       const teacherClassIds = _.map(
@@ -154,10 +154,10 @@ const postComment = async ({
         throw new Error("Bạn chưa từng tham gia lớp hoc nào của giáo viên này");
       }
       const comment = await Comment.create({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId,
         content,
         rating,
-        teacherId: new mongoose.Types.ObjectId(teacherId),
+        teacherId,
       });
 
       const commentsOfClass = await Comment.find({
@@ -178,7 +178,7 @@ const postComment = async ({
     if (courseId) {
       if (!replyTo) {
         const newComment = await Comment.create({
-          userId: new mongoose.Types.ObjectId(userId),
+          userId,
           content,
           courseId,
           isRootComment: true,
@@ -188,7 +188,7 @@ const postComment = async ({
         return newComment;
       } else {
         const newReplyComment = await Comment.create({
-          userId: new mongoose.Types.ObjectId(userId),
+          userId,
           content,
           courseId,
           isRootComment: false,
@@ -210,7 +210,7 @@ const postComment = async ({
         await createNotification({
           content: "Bạn có câu trả lời bình luận mới",
           title: content,
-          sourceUserId: new mongoose.Types.ObjectId(userId),
+          sourceUserId: userId,
           targetUser: [
             {
               targetUserId: replyTo.mentionUserId,
@@ -222,6 +222,25 @@ const postComment = async ({
 
         return newReplyComment;
       }
+    }
+    if (teacherId) {
+      await Comment.create({
+        teacherId,
+        userId,
+        content,
+        rating,
+      });
+      await createNotification({
+        content: "Bạn có bình luận mới",
+        title: content,
+        sourceUserId: userId,
+        targetUser: [
+          {
+            targetUserId: teacherId,
+            status: constants.notificationStatus.new,
+          },
+        ],
+      });
     }
   } catch (err) {
     throw new Error(err);
