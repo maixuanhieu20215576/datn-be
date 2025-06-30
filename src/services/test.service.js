@@ -62,6 +62,7 @@ const getTestQuestion = async ({ testId, userId }) => {
         $match: {
           testId,
           readingText: { $exists: false },
+          questionType: { $ne: "Reading" },
         },
       }, // lọc theo testId
       { $sample: { size: numberOfQuestions } },
