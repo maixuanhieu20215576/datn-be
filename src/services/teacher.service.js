@@ -335,11 +335,12 @@ const getStudentsByClass = async ({ teacherId }) => {
       classStudentInfoItem.classId = _.toString(_.get(classItem, "_id"));
       classStudentInfoItem.className = _.get(classItem, "className");
 
-      const learningProcesses = await learningProcessModel
+      let learningProcesses = await learningProcessModel
         .find({ classId: classItem._id })
         .populate("userId")
         .select("_id fullName email phoneNumber");
 
+      learningProcesses = _.filter(learningProcesses, (lp) => lp.userId);
       classStudentInfoItem.students = learningProcesses.map((lp) => ({
         studentId: lp.userId._id,
         fullName: lp.userId.fullName,
