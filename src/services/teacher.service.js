@@ -10,7 +10,8 @@ const User = require("../models/user.model");
 const moment = require("moment");
 const ApplicationForm = require("../models/applicationForm.model");
 const Comment = require("../models/comment.model");
-const QuestionWithSubQuestions = require("../models/readingQuestion.model");
+const QuestionWithSubQuestions = require("../models/QuestionWithSubQuestions.model");
+const { uploadFileToS3 } = require("../common/utils");
 
 const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
   try {
@@ -48,8 +49,8 @@ const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
       classId: { $in: classIds },
       ...(startDate &&
         endDate && {
-          createdAt: { $gte: startDate, $lte: endDate },
-        }),
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
     });
 
     const totalRevenue = _.sumBy(orderSessions, "price");
@@ -59,8 +60,8 @@ const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
       teacherId,
       ...(startDate &&
         endDate && {
-          createdAt: { $gte: startDate, $lte: endDate },
-        }),
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
     });
 
     const validRatings = learningProcesses.filter(
@@ -76,8 +77,8 @@ const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
       teacherId,
       ...(startDate &&
         endDate && {
-          createdAt: { $gte: startDate, $lte: endDate },
-        }),
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
     });
 
     const totalTeachingDay = _.size(teachingHistory);
@@ -134,8 +135,8 @@ const getTeachingStatisticsByClass = async ({ teacherId, timePeriod }) => {
         classId,
         ...(startDate &&
           endDate && {
-            createdAt: { $gte: startDate, $lte: endDate },
-          }),
+          createdAt: { $gte: startDate, $lte: endDate },
+        }),
       });
       const totalRevenue = _.sumBy(orderSessions, "price");
       teachingStatisticsByClassItem.totalRevenue = totalRevenue;
@@ -318,12 +319,13 @@ const createTest = async ({
     if (question.type !== constants.questionType.grammar) {
       let childQuestionIds = [];
       for (const subQuestion of question.subQuestions) {
+        console.log(subQuestion.question)
         const newSubQuestions = await QuestionModel.create({
           question: subQuestion.question,
-          choice_1: subQuestion.choice[0],
-          choice_2: subQuestion.choice[1],
-          choice_3: subQuestion.choice[2],
-          choice_4: subQuestion.choice[3],
+          choice_1: subQuestion.choices[0],
+          choice_2: subQuestion.choices[1],
+          choice_3: subQuestion.choices[2],
+          choice_4: subQuestion.choices[3],
           answer: subQuestion.correctAnswer,
         });
         childQuestionIds.push(newSubQuestions._id);
@@ -332,8 +334,22 @@ const createTest = async ({
         readingText: question.question,
         childQuestionIds,
         testId,
-        questionType: constants.questionType.reading,
+        questionType: question.audio ? constants.questionType.listening : constants.questionType.reading,
+        audioUrl: question.audio ? question.audio : ''
       });
+    }
+
+    else {
+      await QuestionModel.create({
+        question: question.question,
+        choice_1: question.choices[0],
+        choice_2: question.choices[1],
+        choice_3: question.choices[2],
+        choice_4: question.choices[3],
+        answer: question.correctAnswer,
+        questionType: 'Grammar',
+        testId
+      })
     }
   }
 };

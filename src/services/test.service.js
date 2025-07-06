@@ -2,6 +2,7 @@ const _ = require("lodash");
 const Test = require("../models/test.model");
 const Question = require("../models/question.model");
 const TestResult = require("../models/testResult.model");
+const QuestionWithSubQuestions = require("../models/QuestionWithSubQuestions.model");
 
 const getTests = async ({ language }) => {
   if (!language) {
@@ -32,6 +33,8 @@ const getTestQuestion = async ({ testId, userId }) => {
   let questions;
   let timeLeft;
   let testResultId;
+  let subQuestions = [];
+  let questionWithSubQuestions;
   if (testResult) {
     const questionLogs = _.get(testResult, "questionLogs");
     const questionIds = _.map(questionLogs, "questionId");
@@ -56,13 +59,21 @@ const getTestQuestion = async ({ testId, userId }) => {
         (new Date().getTime() - new Date(startIsoDate).getTime()) / 1000
       );
     testResultId = _.get(testResult, "_id");
+
+    questionWithSubQuestions = await QuestionWithSubQuestions.find({ testId })
+    const childQuestionIds = _.flatMap(questionWithSubQuestions, (qws) => qws.childQuestionIds)
+    const childQuestionIdStrings = _.map(childQuestionIds, (cqi) => _.toString(cqi._id))
+
+    subQuestions = _.filter(questions, (q) => _.includes(childQuestionIdStrings, _.toString(q._id)))
+    questions = _.filter(questions, (q) => !_.includes(childQuestionIdStrings, _.toString(q._id)))
+
   } else {
     questions = await Question.aggregate([
       {
         $match: {
           testId,
           readingText: { $exists: false },
-          questionType: { $ne: "Reading" },
+          questionType: { $eq: "Grammar" },
         },
       }, // lọc theo testId
       { $sample: { size: numberOfQuestions } },
@@ -78,7 +89,16 @@ const getTestQuestion = async ({ testId, userId }) => {
       },
     ]);
 
-    const questionLogs = _.map(questions, (question) => ({
+    // lấy các bài đọc và bài nghe
+    questionWithSubQuestions = await QuestionWithSubQuestions.find({ testId })
+
+    for (const questionWithSubQuestion of questionWithSubQuestions) {
+      const subQuestionItem = await Question.find({ _id: { $in: questionWithSubQuestion.childQuestionIds } }).select('_id question choice_1 choice_2 choice_3 choice_4');
+      subQuestions.push(subQuestionItem)
+    }
+    subQuestions = _.flatten(subQuestions);
+
+    const questionLogs = _.map([...questions, ...subQuestions], (question) => ({
       questionId: question._id,
       answer: 0,
       correctAnswer: question.answer,
@@ -95,7 +115,7 @@ const getTestQuestion = async ({ testId, userId }) => {
     testResultId = _.get(testResult, "_id");
   }
 
-  return { questions, test, timeLeft, testResultId };
+  return { questions, test, timeLeft, testResultId, questionWithSubQuestions, subQuestions };
 };
 
 const submitAnswer = async ({ testResultId, questionId, selectedAnswer }) => {

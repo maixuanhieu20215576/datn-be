@@ -213,6 +213,7 @@ const chatWithGpt = async (req, res) => {
 };
 
 const uploadFile = async (req, res) => {
+  console.log(req.file)
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -225,14 +226,11 @@ const uploadFile = async (req, res) => {
     if (fileMimeType === "image/png" || fileMimeType === "image/jpeg") {
       fileUrl = await uploadImageToImgur({ requestFile: req.file });
     } else {
-      fileUrl = await updateFileToGoogleDrive(
-        fileBuffer,
-        fileName,
-        fileMimeType
-      );
+      fileUrl = await uploadFileToS3(req.file);
     }
     res.status(200).json(fileUrl);
   } catch (err) {
+    console.log(err)
     res.status(500).json({ err });
   }
 };
