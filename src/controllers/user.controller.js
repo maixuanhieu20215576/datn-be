@@ -213,7 +213,6 @@ const chatWithGpt = async (req, res) => {
 };
 
 const uploadFile = async (req, res) => {
-  console.log(req.file)
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
