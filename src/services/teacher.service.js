@@ -10,6 +10,7 @@ const User = require("../models/user.model");
 const moment = require("moment");
 const ApplicationForm = require("../models/applicationForm.model");
 const Comment = require("../models/comment.model");
+const QuestionWithSubQuestions = require("../models/readingQuestion.model");
 
 const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
   try {
@@ -298,9 +299,12 @@ const createTest = async ({
   classId,
   maxGrade,
 }) => {
+  const numberOfQuestions = _.sumBy(questions, (q) =>
+    q.subQuestions ? q.subQuestions.length : 1
+  );
   const newTest = await TestModel.create({
     name: testName,
-    numberOfQuestions: questions.length,
+    numberOfQuestions,
     timeLimitByMinutes: timeLimit,
     examDate: examDate ? moment(examDate, "DD/MM/YYYY").toDate() : "",
     examTime,
@@ -310,20 +314,28 @@ const createTest = async ({
 
   const testId = newTest._id.toString();
 
-  const newQuestions = questions.map((question) => {
-    const choice = question.choices; // lưu ý đúng trường
-    return {
-      question: question.question,
-      choice_1: choice[0],
-      choice_2: choice[1],
-      choice_3: choice[2],
-      choice_4: choice[3],
-      answer: question.correctAnswer,
-      testId,
-    };
-  });
-
-  await QuestionModel.insertMany(newQuestions);
+  for (const question of questions) {
+    if (question.type !== constants.questionType.grammar) {
+      let childQuestionIds = [];
+      for (const subQuestion of question.subQuestions) {
+        const newSubQuestions = await QuestionModel.create({
+          question: subQuestion.question,
+          choice_1: subQuestion.choice[0],
+          choice_2: subQuestion.choice[1],
+          choice_3: subQuestion.choice[2],
+          choice_4: subQuestion.choice[3],
+          answer: subQuestion.correctAnswer,
+        });
+        childQuestionIds.push(newSubQuestions._id);
+      }
+      await QuestionWithSubQuestions.create({
+        readingText: question.question,
+        childQuestionIds,
+        testId,
+        questionType: constants.questionType.reading,
+      });
+    }
+  }
 };
 
 const getStudentsByClass = async ({ teacherId }) => {

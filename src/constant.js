@@ -30,6 +30,7 @@ const constants = {
     reading: "Reading",
     grammar: "Grammar",
     vocab: "Vocab",
+    listening: "Listening",
   },
   courseLevel: {
     ALL: "All levels",
@@ -90,7 +91,7 @@ const constants = {
   commentVoteType: {
     upvote: "upvote",
     downvote: "downvote",
-  }
+  },
 };
 
 module.exports = { constants };

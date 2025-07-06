@@ -1,18 +1,29 @@
 const mongoose = require("mongoose");
+const { constants } = require("../constant");
 
-const ReadingQuestionSchema = mongoose.Schema(
+const QuestionWithSubQuestionsSchema = mongoose.Schema(
   {
     readingText: {
       type: String,
-      required: true,
+    },
+    audioUrl: {
+      type: String,
     },
     childQuestionIds: [mongoose.Schema.Types.ObjectId],
+    testId: String,
+    questionType: {
+      type: String,
+      enum: constants.questionType,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const ReadingQuestion = mongoose.model("ReadingQuestion", ReadingQuestionSchema);
+const QuestionWithSubQuestions = mongoose.model(
+  "QuestionWithSubQuestions",
+  QuestionWithSubQuestionsSchema
+);
 
-module.exports = ReadingQuestion;
+module.exports = QuestionWithSubQuestions;
