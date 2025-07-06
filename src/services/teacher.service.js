@@ -10,6 +10,8 @@ const User = require("../models/user.model");
 const moment = require("moment");
 const ApplicationForm = require("../models/applicationForm.model");
 const Comment = require("../models/comment.model");
+const QuestionWithSubQuestions = require("../models/QuestionWithSubQuestions.model");
+const { uploadFileToS3 } = require("../common/utils");
 
 const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
   try {
@@ -47,8 +49,8 @@ const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
       classId: { $in: classIds },
       ...(startDate &&
         endDate && {
-          createdAt: { $gte: startDate, $lte: endDate },
-        }),
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
     });
 
     const totalRevenue = _.sumBy(orderSessions, "price");
@@ -58,8 +60,8 @@ const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
       teacherId,
       ...(startDate &&
         endDate && {
-          createdAt: { $gte: startDate, $lte: endDate },
-        }),
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
     });
 
     const validRatings = learningProcesses.filter(
@@ -75,8 +77,8 @@ const getTeachingStatistics = async ({ teacherId, timePeriod }) => {
       teacherId,
       ...(startDate &&
         endDate && {
-          createdAt: { $gte: startDate, $lte: endDate },
-        }),
+        createdAt: { $gte: startDate, $lte: endDate },
+      }),
     });
 
     const totalTeachingDay = _.size(teachingHistory);
@@ -133,8 +135,8 @@ const getTeachingStatisticsByClass = async ({ teacherId, timePeriod }) => {
         classId,
         ...(startDate &&
           endDate && {
-            createdAt: { $gte: startDate, $lte: endDate },
-          }),
+          createdAt: { $gte: startDate, $lte: endDate },
+        }),
       });
       const totalRevenue = _.sumBy(orderSessions, "price");
       teachingStatisticsByClassItem.totalRevenue = totalRevenue;
@@ -298,9 +300,12 @@ const createTest = async ({
   classId,
   maxGrade,
 }) => {
+  const numberOfQuestions = _.sumBy(questions, (q) =>
+    q.subQuestions ? q.subQuestions.length : 1
+  );
   const newTest = await TestModel.create({
     name: testName,
-    numberOfQuestions: questions.length,
+    numberOfQuestions,
     timeLimitByMinutes: timeLimit,
     examDate: examDate ? moment(examDate, "DD/MM/YYYY").toDate() : "",
     examTime,
@@ -310,20 +315,43 @@ const createTest = async ({
 
   const testId = newTest._id.toString();
 
-  const newQuestions = questions.map((question) => {
-    const choice = question.choices; // lưu ý đúng trường
-    return {
-      question: question.question,
-      choice_1: choice[0],
-      choice_2: choice[1],
-      choice_3: choice[2],
-      choice_4: choice[3],
-      answer: question.correctAnswer,
-      testId,
-    };
-  });
+  for (const question of questions) {
+    if (question.type !== constants.questionType.grammar) {
+      let childQuestionIds = [];
+      for (const subQuestion of question.subQuestions) {
+        console.log(subQuestion.question)
+        const newSubQuestions = await QuestionModel.create({
+          question: subQuestion.question,
+          choice_1: subQuestion.choices[0],
+          choice_2: subQuestion.choices[1],
+          choice_3: subQuestion.choices[2],
+          choice_4: subQuestion.choices[3],
+          answer: subQuestion.correctAnswer,
+        });
+        childQuestionIds.push(newSubQuestions._id);
+      }
+      await QuestionWithSubQuestions.create({
+        readingText: question.question,
+        childQuestionIds,
+        testId,
+        questionType: question.audio ? constants.questionType.listening : constants.questionType.reading,
+        audioUrl: question.audio ? question.audio : ''
+      });
+    }
 
-  await QuestionModel.insertMany(newQuestions);
+    else {
+      await QuestionModel.create({
+        question: question.question,
+        choice_1: question.choices[0],
+        choice_2: question.choices[1],
+        choice_3: question.choices[2],
+        choice_4: question.choices[3],
+        answer: question.correctAnswer,
+        questionType: 'Grammar',
+        testId
+      })
+    }
+  }
 };
 
 const getStudentsByClass = async ({ teacherId }) => {

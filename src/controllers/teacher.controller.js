@@ -90,6 +90,7 @@ const createTest = async (req, res) => {
     });
     res.status(200).json("Create test successfully");
   } catch (err) {
+    console.log(err)
     res.status(500).json(err);
   }
 };

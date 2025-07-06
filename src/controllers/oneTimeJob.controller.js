@@ -1,7 +1,7 @@
 const _ = require("lodash");
 const Question = require("../models/question.model");
 const { constants } = require("../constant");
-const ReadingQuestion = require("../models/readingQuestion.model");
+const QuestionWithSubQuestions = require("../models/QuestionWithSubQuestions.model");
 const orderSessionModel = require("../models/orderSession.model");
 const mongoose = require("mongoose");
 const moment = require("moment");
@@ -21,7 +21,7 @@ const updateQuestions = async (req, res) => {
     for (const question of allQuestions) {
       const childQuestionId = _.get(question, "_id");
       const readingText = _.get(question, "reading_text");
-      const readingQuestion = await ReadingQuestion.findOneAndUpdate(
+      const QuestionWithSubQuestions = await QuestionWithSubQuestions.findOneAndUpdate(
         { readingText: readingText }, // Điều kiện tìm kiếm
         {
           $push: { childQuestionIds: childQuestionId }, // Cập nhật mảng nếu tài liệu đã tồn tại
@@ -33,7 +33,7 @@ const updateQuestions = async (req, res) => {
           fields: { readingText, childQuestionIds: [childQuestionId] }, // Đảm bảo tạo đúng tài liệu mới
         }
       );
-      const readingQuestionId = _.get(readingQuestion, "_id");
+      const readingQuestionId = _.get(QuestionWithSubQuestions, "_id");
       await Question.findByIdAndUpdate(childQuestionId, {
         $set: { readingQuestionId: readingQuestionId },
       });
